@@ -1,0 +1,26 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AqiReading {
+  id         String   @id @default(cuid())
+  title      String
+  latitude   Float
+  longitude  Float
+  value      Int
+  pm25       Float
+  pm10       Float
+  source     String   @default("mock")
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([latitude, longitude])
+  @@index([recordedAt])
+}
