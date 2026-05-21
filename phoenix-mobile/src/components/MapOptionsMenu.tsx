@@ -1,0 +1,107 @@
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+type ActivePanel = 'aqi' | 'summary' | 'alerts';
+
+type MapOptionsMenuProps = {
+  open: boolean;
+  activePanel: ActivePanel;
+  onToggle: () => void;
+  onSelect: (panel: ActivePanel) => void;
+};
+
+export default function MapOptionsMenu({
+  open,
+  activePanel,
+  onToggle,
+  onSelect,
+}: MapOptionsMenuProps) {
+  return (
+    <View style={styles.container}>
+      <Pressable style={styles.menuButton} onPress={onToggle}>
+        <Text style={styles.menuIcon}>☰</Text>
+      </Pressable>
+
+      {open && (
+        <View style={styles.dropdown}>
+          <Pressable
+            style={[
+              styles.option,
+              activePanel === 'aqi' && styles.optionActive,
+            ]}
+            onPress={() => onSelect('aqi')}
+          >
+            <Text style={styles.optionText}>AQI actual</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.option,
+              activePanel === 'summary' && styles.optionActive,
+            ]}
+            onPress={() => onSelect('summary')}
+          >
+            <Text style={styles.optionText}>Resumen</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.option,
+              activePanel === 'alerts' && styles.optionActive,
+            ]}
+            onPress={() => onSelect('alerts')}
+          >
+            <Text style={styles.optionText}>Alertas</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 12,
+    left: 20,
+    zIndex: 50,
+    alignItems: 'flex-start',
+  },
+  menuButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuIcon: {
+    color: '#f8fafc',
+    fontSize: 24,
+    fontWeight: '900',
+    marginTop: -2,
+  },
+  dropdown: {
+    marginTop: 10,
+    width: 180,
+    backgroundColor: 'rgba(15, 23, 42, 0.97)',
+    borderRadius: 18,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+  },
+  option: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+  },
+  optionActive: {
+    backgroundColor: 'rgba(14, 116, 144, 0.65)',
+  },
+  optionText: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+});
