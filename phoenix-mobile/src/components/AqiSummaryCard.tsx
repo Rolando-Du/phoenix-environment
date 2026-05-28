@@ -11,20 +11,43 @@ function formatValue(value: number | null) {
   return value === null ? '--' : String(value);
 }
 
+function getSourceLabel(source: AqiSummary['source']) {
+  if (source === 'openaq') return 'OpenAQ real';
+  if (source === 'mock') return 'Mock temporal';
+
+  return 'Mixto';
+}
+
+function getSourceColor(source: AqiSummary['source']) {
+  if (source === 'openaq') return '#22c55e';
+  if (source === 'mock') return '#eab308';
+
+  return '#38bdf8';
+}
+
 export default function AqiSummaryCard({
   summary,
   onClose,
 }: AqiSummaryCardProps) {
+  const sourceColor = getSourceColor(summary.source);
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderColor: sourceColor }]}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerText}>
           <Text style={styles.label}>RESUMEN AQI</Text>
           <Text style={styles.title}>Histórico ambiental</Text>
         </View>
 
+        <View style={[styles.sourceBadge, { borderColor: sourceColor }]}>
+          <Text style={styles.sourceLabel}>Fuente</Text>
+          <Text style={[styles.sourceValue, { color: sourceColor }]}>
+            {getSourceLabel(summary.source)}
+          </Text>
+        </View>
+
         <Pressable style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeText}>Cerrar</Text>
+          <Text style={styles.closeText}>×</Text>
         </Pressable>
       </View>
 
@@ -74,13 +97,15 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
     alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
   },
   label: {
     color: '#38bdf8',
@@ -94,16 +119,38 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     marginTop: 2,
   },
-  closeButton: {
+  sourceBadge: {
     backgroundColor: 'rgba(30, 41, 59, 0.95)',
     borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderWidth: 1,
+    minWidth: 82,
+  },
+  sourceLabel: {
+    color: '#94a3b8',
+    fontSize: 8,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  sourceValue: {
+    fontSize: 10,
+    fontWeight: '900',
+    marginTop: 1,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeText: {
     color: '#f8fafc',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 24,
   },
   contentRow: {
     flexDirection: 'row',
