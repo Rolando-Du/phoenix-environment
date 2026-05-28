@@ -14,6 +14,7 @@ import { useUserLocation } from '../hooks/useUserLocation';
 import { getCurrentAlert } from '../services/alertService';
 import type { CurrentAlert } from '../services/alertService';
 import { getNearbyAqiPoints } from '../services/aqiService';
+import type { AqiSource } from '../services/aqiService';
 import { getAqiSummary } from '../services/aqiSummaryService';
 import type { AqiSummary } from '../services/aqiSummaryService';
 import { darkMapStyle } from '../theme/mapStyle';
@@ -35,6 +36,7 @@ export default function MapScreen() {
     null
   );
 
+  const [aqiSource, setAqiSource] = useState<AqiSource>('mock');
   const [aqiSummary, setAqiSummary] = useState<AqiSummary | null>(null);
   const [currentAlert, setCurrentAlert] = useState<CurrentAlert | null>(null);
 
@@ -47,13 +49,14 @@ export default function MapScreen() {
     if (loadingLocation) return;
 
     async function loadAqiData() {
-      const points = await getNearbyAqiPoints({
+      const nearbyResult = await getNearbyAqiPoints({
         latitude: userLocation?.coords.latitude,
         longitude: userLocation?.coords.longitude,
       });
 
-      setAqiPoints(points);
-      setSelectedAqiPoint(points[0]);
+      setAqiSource(nearbyResult.source);
+      setAqiPoints(nearbyResult.points);
+      setSelectedAqiPoint(nearbyResult.points[0] ?? null);
 
       const summary = await getAqiSummary();
       setAqiSummary(summary);
@@ -164,6 +167,7 @@ export default function MapScreen() {
             value={selectedAqiPoint.value}
             pm25={selectedAqiPoint.pm25}
             pm10={selectedAqiPoint.pm10}
+            source={aqiSource}
           />
         )}
       </View>

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { AqiSource } from '../services/aqiService';
 import { getAqiStatus } from '../utils/getAqiStatus';
 
 type AqiCardProps = {
@@ -7,9 +8,24 @@ type AqiCardProps = {
   value: number;
   pm25: number;
   pm10: number;
+  source: AqiSource;
 };
 
-export default function AqiCard({ title, value, pm25, pm10 }: AqiCardProps) {
+function getSourceLabel(source: AqiSource) {
+  if (source === 'openaq') {
+    return 'OpenAQ';
+  }
+
+  return 'Mock temporal';
+}
+
+export default function AqiCard({
+  title,
+  value,
+  pm25,
+  pm10,
+  source,
+}: AqiCardProps) {
   const aqiStatus = getAqiStatus(value);
 
   return (
@@ -23,10 +39,19 @@ export default function AqiCard({ title, value, pm25, pm10 }: AqiCardProps) {
       </View>
 
       <View style={styles.rightColumn}>
-        <Text style={styles.zoneLabel}>Zona seleccionada</Text>
-        <Text style={styles.zoneTitle} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={styles.zoneContent}>
+            <Text style={styles.zoneLabel}>Zona seleccionada</Text>
+            <Text style={styles.zoneTitle} numberOfLines={1}>
+              {title}
+            </Text>
+          </View>
+
+          <View style={styles.sourceBadge}>
+            <Text style={styles.sourceLabel}>Fuente</Text>
+            <Text style={styles.sourceValue}>{getSourceLabel(source)}</Text>
+          </View>
+        </View>
 
         <Text style={styles.description} numberOfLines={2}>
           {aqiStatus.description}
@@ -82,6 +107,14 @@ const styles = StyleSheet.create({
   rightColumn: {
     flex: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  zoneContent: {
+    flex: 1,
+  },
   zoneLabel: {
     color: '#94a3b8',
     fontSize: 10,
@@ -95,11 +128,30 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     marginTop: 2,
   },
+  sourceBadge: {
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    minWidth: 76,
+  },
+  sourceLabel: {
+    color: '#94a3b8',
+    fontSize: 9,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  sourceValue: {
+    color: '#f8fafc',
+    fontSize: 11,
+    fontWeight: '900',
+    marginTop: 1,
+  },
   description: {
     color: '#cbd5e1',
     fontSize: 12,
     lineHeight: 17,
-    marginTop: 4,
+    marginTop: 6,
   },
   metricsRow: {
     flexDirection: 'row',

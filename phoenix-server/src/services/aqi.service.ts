@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma';
+import { getOpenAqNearbyPoints } from './openAq.service';
 
 export type AqiPoint = {
   id: string;
@@ -15,6 +16,13 @@ export type AqiPoint = {
 type GetNearbyAqiParams = {
   latitude?: number;
   longitude?: number;
+};
+
+export type AqiNearbySource = 'mock' | 'openaq';
+
+export type AqiNearbyResult = {
+  source: AqiNearbySource;
+  points: AqiPoint[];
 };
 
 export type AqiHistoryItem = {
@@ -43,14 +51,8 @@ export type AqiSummary = {
 const DEFAULT_LATITUDE = -40.1579;
 const DEFAULT_LONGITUDE = -71.3534;
 
-export async function getNearbyAqiPoints({
-  latitude,
-  longitude,
-}: GetNearbyAqiParams): Promise<AqiPoint[]> {
-  const baseLatitude = latitude ?? DEFAULT_LATITUDE;
-  const baseLongitude = longitude ?? DEFAULT_LONGITUDE;
-
-  const points: AqiPoint[] = [
+function buildMockAqiPoints(latitude: number, longitude: number): AqiPoint[] {
+  return [
     {
       id: 'user-zone',
       title: 'Tu zona',
@@ -58,8 +60,8 @@ export async function getNearbyAqiPoints({
       pm25: 8,
       pm10: 18,
       coordinate: {
-        latitude: baseLatitude,
-        longitude: baseLongitude,
+        latitude,
+        longitude,
       },
     },
     {
@@ -69,8 +71,8 @@ export async function getNearbyAqiPoints({
       pm25: 18,
       pm10: 34,
       coordinate: {
-        latitude: baseLatitude + 0.015,
-        longitude: baseLongitude + 0.012,
+        latitude: latitude + 0.015,
+        longitude: longitude + 0.012,
       },
     },
     {
@@ -80,8 +82,8 @@ export async function getNearbyAqiPoints({
       pm25: 31,
       pm10: 58,
       coordinate: {
-        latitude: baseLatitude - 0.015,
-        longitude: baseLongitude - 0.012,
+        latitude: latitude - 0.015,
+        longitude: longitude - 0.012,
       },
     },
     {
@@ -91,12 +93,14 @@ export async function getNearbyAqiPoints({
       pm25: 46,
       pm10: 82,
       coordinate: {
-        latitude: baseLatitude + 0.006,
-        longitude: baseLongitude - 0.02,
+        latitude: latitude + 0.006,
+        longitude: longitude - 0.02,
       },
     },
   ];
+}
 
+async function saveAqiReadings(points: AqiPoint[], source: AqiNearbySource) {
   try {
     await prisma.aqiReading.createMany({
       data: points.map((point) => ({
@@ -106,14 +110,49 @@ export async function getNearbyAqiPoints({
         value: point.value,
         pm25: point.pm25,
         pm10: point.pm10,
-        source: 'mock',
+        source,
       })),
     });
   } catch (error) {
     console.error('No se pudo guardar el histórico AQI:', error);
   }
+}
 
-  return points;
+export async function getNearbyAqiPoints({
+  latitude,
+  longitude,
+}: GetNearbyAqiParams): Promise<AqiNearbyResult> {
+  const baseLatitude = latitude ?? DEFAULT_LATITUDE;
+  const baseLongitude = longitude ?? DEFAULT_LONGITUDE;
+
+  try {
+    const openAqPoints = await getOpenAqNearbyPoints(
+      baseLatitude,
+      baseLongitude
+    );
+
+    if (openAqPoints.length > 0) {
+      await saveAqiReadings(openAqPoints, 'openaq');
+
+      return {
+        source: 'openaq',
+        points: openAqPoints,
+      };
+    }
+
+    console.warn('OpenAQ no devolvió puntos cercanos. Usando mock temporal.');
+  } catch (error) {
+    console.error('No se pudieron obtener datos desde OpenAQ:', error);
+  }
+
+  const mockPoints = buildMockAqiPoints(baseLatitude, baseLongitude);
+
+  await saveAqiReadings(mockPoints, 'mock');
+
+  return {
+    source: 'mock',
+    points: mockPoints,
+  };
 }
 
 export async function getAqiHistory(): Promise<AqiHistoryItem[]> {

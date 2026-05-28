@@ -20,14 +20,16 @@ export async function getNearbyAqi(req: Request, res: Response) {
     });
   }
 
-  const points = await getNearbyAqiPoints({
+  const result = await getNearbyAqiPoints({
     latitude,
     longitude,
   });
 
+  const { source, points } = result;
+
   return res.status(200).json({
     success: true,
-    source: 'mock',
+    source,
     receivedLocation: {
       latitude: latitude ?? null,
       longitude: longitude ?? null,

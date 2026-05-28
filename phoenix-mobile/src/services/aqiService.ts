@@ -7,17 +7,29 @@ type GetNearbyAqiPointsParams = {
   longitude?: number;
 };
 
+export type AqiSource = 'mock' | 'openaq';
+
+export type NearbyAqiResult = {
+  source: AqiSource;
+  points: AqiPoint[];
+};
+
 type AqiNearbyResponse = {
   success: boolean;
-  source: string;
+  source: AqiSource;
   count: number;
   data: AqiPoint[];
+};
+
+const FALLBACK_AQI_RESULT: NearbyAqiResult = {
+  source: 'mock',
+  points: AQI_POINTS,
 };
 
 export async function getNearbyAqiPoints({
   latitude,
   longitude,
-}: GetNearbyAqiPointsParams = {}): Promise<AqiPoint[]> {
+}: GetNearbyAqiPointsParams = {}): Promise<NearbyAqiResult> {
   try {
     const params = new URLSearchParams();
 
@@ -47,10 +59,13 @@ export async function getNearbyAqiPoints({
       throw new Error('La API respondió con error.');
     }
 
-    return result.data;
+    return {
+      source: result.source,
+      points: result.data,
+    };
   } catch (error) {
     console.warn('Usando datos AQI mock por fallback:', error);
 
-    return AQI_POINTS;
+    return FALLBACK_AQI_RESULT;
   }
 }
