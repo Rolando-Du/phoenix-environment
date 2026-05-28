@@ -33,7 +33,7 @@ export function useUserLocation(): UseUserLocationReturn {
         });
 
         setUserLocation(currentLocation);
-        setStatusMessage('Ubicación real detectada correctamente.');
+        setStatusMessage('Ubicación real detectada.');
       } catch (error) {
         setStatusMessage('No se pudo obtener la ubicación. Usando región inicial.');
       } finally {

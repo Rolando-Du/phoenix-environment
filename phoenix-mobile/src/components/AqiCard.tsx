@@ -13,21 +13,24 @@ export default function AqiCard({ title, value, pm25, pm10 }: AqiCardProps) {
   const aqiStatus = getAqiStatus(value);
 
   return (
-    <View style={styles.aqiCard}>
-      <View>
-        <Text style={styles.aqiLabel}>AQI ACTUAL</Text>
-        <Text style={styles.aqiValue}>{value}</Text>
-        <Text style={[styles.aqiStatus, { color: aqiStatus.color }]}>
+    <View style={styles.card}>
+      <View style={styles.leftColumn}>
+        <Text style={styles.label}>AQI ACTUAL</Text>
+        <Text style={styles.value}>{value}</Text>
+        <Text style={[styles.status, { color: aqiStatus.color }]}>
           {aqiStatus.label}
         </Text>
       </View>
 
-      <View style={styles.aqiInfo}>
-        <View>
-          <Text style={styles.zoneLabel}>Zona seleccionada</Text>
-          <Text style={styles.zoneTitle}>{title}</Text>
-          <Text style={styles.aqiDescription}>{aqiStatus.description}</Text>
-        </View>
+      <View style={styles.rightColumn}>
+        <Text style={styles.zoneLabel}>Zona seleccionada</Text>
+        <Text style={styles.zoneTitle} numberOfLines={1}>
+          {title}
+        </Text>
+
+        <Text style={styles.description} numberOfLines={2}>
+          {aqiStatus.description}
+        </Text>
 
         <View style={styles.metricsRow}>
           <View style={styles.metricBox}>
@@ -46,79 +49,79 @@ export default function AqiCard({ title, value, pm25, pm10 }: AqiCardProps) {
 }
 
 const styles = StyleSheet.create({
-  aqiCard: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 32,
+  card: {
     backgroundColor: 'rgba(15, 23, 42, 0.94)',
-    borderRadius: 28,
-    padding: 20,
+    borderRadius: 22,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.35)',
     flexDirection: 'row',
-    gap: 18,
+    gap: 14,
   },
-  aqiLabel: {
+  leftColumn: {
+    width: 86,
+  },
+  label: {
     color: '#38bdf8',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  aqiValue: {
-    color: '#f8fafc',
-    fontSize: 48,
+    fontSize: 10,
     fontWeight: '900',
-    lineHeight: 54,
-    marginTop: 4,
+    letterSpacing: 1,
   },
-  aqiStatus: {
-    fontSize: 16,
-    fontWeight: '800',
+  value: {
+    color: '#f8fafc',
+    fontSize: 38,
+    fontWeight: '900',
+    lineHeight: 42,
+    marginTop: 2,
   },
-  aqiInfo: {
+  status: {
+    fontSize: 13,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  rightColumn: {
     flex: 1,
-    justifyContent: 'space-between',
   },
   zoneLabel: {
     color: '#94a3b8',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.7,
   },
   zoneTitle: {
     color: '#f8fafc',
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '900',
     marginTop: 2,
-    marginBottom: 4,
   },
-  aqiDescription: {
+  description: {
     color: '#cbd5e1',
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
   },
   metricsRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
+    gap: 8,
+    marginTop: 10,
   },
   metricBox: {
     flex: 1,
     backgroundColor: 'rgba(30, 41, 59, 0.9)',
-    borderRadius: 16,
-    padding: 10,
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 9,
   },
   metricLabel: {
     color: '#94a3b8',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
   },
   metricValue: {
     color: '#f8fafc',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '900',
-    marginTop: 2,
+    marginTop: 1,
   },
 });

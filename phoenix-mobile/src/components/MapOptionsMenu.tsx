@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-type ActivePanel = 'aqi' | 'summary' | 'alerts';
+type ActivePanel = "aqi" | "summary" | "alerts";
 
 type MapOptionsMenuProps = {
   open: boolean;
@@ -26,9 +26,9 @@ export default function MapOptionsMenu({
           <Pressable
             style={[
               styles.option,
-              activePanel === 'aqi' && styles.optionActive,
+              activePanel === "aqi" && styles.optionActive,
             ]}
-            onPress={() => onSelect('aqi')}
+            onPress={() => onSelect("aqi")}
           >
             <Text style={styles.optionText}>AQI actual</Text>
           </Pressable>
@@ -36,9 +36,9 @@ export default function MapOptionsMenu({
           <Pressable
             style={[
               styles.option,
-              activePanel === 'summary' && styles.optionActive,
+              activePanel === "summary" && styles.optionActive,
             ]}
-            onPress={() => onSelect('summary')}
+            onPress={() => onSelect("summary")}
           >
             <Text style={styles.optionText}>Resumen</Text>
           </Pressable>
@@ -46,9 +46,9 @@ export default function MapOptionsMenu({
           <Pressable
             style={[
               styles.option,
-              activePanel === 'alerts' && styles.optionActive,
+              activePanel === "alerts" && styles.optionActive,
             ]}
-            onPress={() => onSelect('alerts')}
+            onPress={() => onSelect("alerts")}
           >
             <Text style={styles.optionText}>Alertas</Text>
           </Pressable>
@@ -60,36 +60,36 @@ export default function MapOptionsMenu({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     left: 20,
     zIndex: 50,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   menuButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "rgba(56, 189, 248, 0.45)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   menuIcon: {
-    color: '#f8fafc',
+    color: "#f8fafc",
     fontSize: 24,
-    fontWeight: '900',
+    fontWeight: "900",
     marginTop: -2,
   },
   dropdown: {
     marginTop: 10,
     width: 180,
-    backgroundColor: 'rgba(15, 23, 42, 0.97)',
+    backgroundColor: "rgba(15, 23, 42, 0.97)",
     borderRadius: 18,
     padding: 8,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
+    borderColor: "rgba(148, 163, 184, 0.25)",
   },
   option: {
     paddingVertical: 12,
@@ -97,11 +97,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   optionActive: {
-    backgroundColor: 'rgba(14, 116, 144, 0.65)',
+    backgroundColor: "rgba(14, 116, 144, 0.65)",
   },
   optionText: {
-    color: '#f8fafc',
+    color: "#f8fafc",
     fontSize: 13,
-    fontWeight: '900',
+    fontWeight: "900",
   },
 });
