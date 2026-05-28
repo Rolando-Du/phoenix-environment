@@ -1,3 +1,5 @@
+import { calculateAqiFromPollutants } from '../utils/calculateAqi';
+
 type OpenAqLocationSensor = {
   id: number;
   parameter?: {
@@ -93,17 +95,15 @@ function findLatestValueBySensorId(
 ) {
   if (!sensorId) return null;
 
-  return (
+  const value =
     latestMeasurements.find((measurement) => measurement.sensorsId === sensorId)
-      ?.value ?? null
-  );
-}
+      ?.value ?? null;
 
-function calculateSimpleAqi(pm25: number | null, pm10: number | null) {
-  const pm25Score = pm25 !== null ? Math.round(pm25 * 4) : 0;
-  const pm10Score = pm10 !== null ? Math.round(pm10 * 2) : 0;
+  if (value === null || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
 
-  return Math.max(pm25Score, pm10Score, 1);
+  return value;
 }
 
 export async function getOpenAqNearbyPoints(
@@ -146,7 +146,10 @@ export async function getOpenAqNearbyPoints(
       return {
         id: `openaq-${location.id}`,
         title: location.name,
-        value: calculateSimpleAqi(pm25, pm10),
+        value: calculateAqiFromPollutants({
+          pm25,
+          pm10,
+        }),
         pm25: pm25 ?? 0,
         pm10: pm10 ?? 0,
         coordinate: {
