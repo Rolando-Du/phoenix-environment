@@ -11,13 +11,16 @@ export type CurrentAlert = {
   generatedAt: Date;
 };
 
+const RECENT_WINDOW_MINUTES = 30;
+
 function buildAlertFromAqi(maxAqi: number | null): CurrentAlert {
   if (maxAqi === null) {
     return {
       active: false,
       level: 'info',
-      title: 'Sin datos suficientes',
-      message: 'Todavía no hay lecturas AQI disponibles para generar alertas.',
+      title: 'Sin datos reales recientes',
+      message:
+        'No hay lecturas reales recientes de OpenAQ para generar alertas ambientales.',
       maxAqi: null,
       generatedAt: new Date(),
     };
@@ -69,8 +72,22 @@ function buildAlertFromAqi(maxAqi: number | null): CurrentAlert {
   };
 }
 
+function getRecentDateLimit() {
+  const now = new Date();
+
+  return new Date(now.getTime() - RECENT_WINDOW_MINUTES * 60 * 1000);
+}
+
 export async function getCurrentAlert(): Promise<CurrentAlert> {
+  const recentDateLimit = getRecentDateLimit();
+
   const stats = await prisma.aqiReading.aggregate({
+    where: {
+      source: 'openaq',
+      recordedAt: {
+        gte: recentDateLimit,
+      },
+    },
     _max: {
       value: true,
     },
