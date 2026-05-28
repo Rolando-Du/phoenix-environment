@@ -132,7 +132,7 @@ function buildSourceWhere(source: AqiHistorySource) {
   };
 }
 
-async function saveAqiReadings(points: AqiPoint[], source: AqiNearbySource) {
+async function saveAqiReadings(points: AqiPoint[], source: 'openaq') {
   try {
     await prisma.aqiReading.createMany({
       data: points.map((point) => ({
@@ -172,14 +172,14 @@ export async function getNearbyAqiPoints({
       };
     }
 
-    console.warn('OpenAQ no devolvió puntos cercanos. Usando mock temporal.');
+    console.warn(
+      'OpenAQ no devolvió puntos cercanos. Usando mock temporal sin guardar en base.'
+    );
   } catch (error) {
     console.error('No se pudieron obtener datos desde OpenAQ:', error);
   }
 
   const mockPoints = buildMockAqiPoints(baseLatitude, baseLongitude);
-
-  await saveAqiReadings(mockPoints, 'mock');
 
   return {
     source: 'mock',
