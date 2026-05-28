@@ -4,6 +4,7 @@ import MapView, { Marker } from "react-native-maps";
 import type { Region } from "react-native-maps";
 
 import AqiCard from "../components/AqiCard";
+import AqiHistoryCard from "../components/AqiHistoryCard";
 import AqiMapMarker from "../components/AqiMapMarker";
 import AqiSummaryCard from "../components/AqiSummaryCard";
 import CurrentAlertCard from "../components/CurrentAlertCard";
@@ -13,13 +14,15 @@ import type { AqiPoint } from "../data/aqiPoints";
 import { useUserLocation } from "../hooks/useUserLocation";
 import { getCurrentAlert } from "../services/alertService";
 import type { CurrentAlert } from "../services/alertService";
+import { getAqiHistory } from "../services/aqiHistoryService";
+import type { AqiHistoryItem } from "../services/aqiHistoryService";
 import { getNearbyAqiPoints } from "../services/aqiService";
 import type { AqiSource } from "../services/aqiService";
 import { getAqiSummary } from "../services/aqiSummaryService";
 import type { AqiSummary } from "../services/aqiSummaryService";
 import { darkMapStyle } from "../theme/mapStyle";
 
-type ActivePanel = "aqi" | "summary" | "alerts";
+type ActivePanel = "aqi" | "summary" | "alerts" | "history";
 type LocationMode = "user" | "demo";
 
 const DEFAULT_REGION: Region = {
@@ -46,6 +49,7 @@ export default function MapScreen() {
 
   const [aqiSource, setAqiSource] = useState<AqiSource>("mock");
   const [aqiSummary, setAqiSummary] = useState<AqiSummary | null>(null);
+  const [aqiHistory, setAqiHistory] = useState<AqiHistoryItem[]>([]);
   const [currentAlert, setCurrentAlert] = useState<CurrentAlert | null>(null);
 
   const [activePanel, setActivePanel] = useState<ActivePanel>("aqi");
@@ -85,6 +89,13 @@ export default function MapScreen() {
       });
 
       setAqiSummary(summary);
+
+      const history = await getAqiHistory({
+        source: nearbyResult.source,
+        limit: 10,
+      });
+
+      setAqiHistory(history);
 
       const alert = await getCurrentAlert();
       setCurrentAlert(alert);
@@ -193,10 +204,19 @@ export default function MapScreen() {
         onUseDemoLocation={handleUseDemoLocation}
         onUseUserLocation={handleUseUserLocation}
       />
+
       <View style={styles.bottomPanel}>
         {activePanel === "summary" && aqiSummary && (
           <AqiSummaryCard
             summary={aqiSummary}
+            onClose={() => setActivePanel("aqi")}
+          />
+        )}
+
+        {activePanel === "history" && (
+          <AqiHistoryCard
+            history={aqiHistory}
+            source={aqiSource}
             onClose={() => setActivePanel("aqi")}
           />
         )}

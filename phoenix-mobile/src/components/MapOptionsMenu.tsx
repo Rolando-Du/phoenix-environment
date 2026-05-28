@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-type ActivePanel = "aqi" | "summary" | "alerts";
+type ActivePanel = "aqi" | "summary" | "alerts" | "history";
 
 type MapOptionsMenuProps = {
   open: boolean;
@@ -55,6 +55,16 @@ export default function MapOptionsMenu({
             onPress={() => onSelect("alerts")}
           >
             <Text style={styles.optionText}>Alertas</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.option,
+              activePanel === "history" && styles.optionActive,
+            ]}
+            onPress={() => onSelect("history")}
+          >
+            <Text style={styles.optionText}>Historial</Text>
           </Pressable>
 
           <View style={styles.separator} />
