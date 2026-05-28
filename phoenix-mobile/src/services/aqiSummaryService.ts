@@ -1,4 +1,7 @@
 import { API_BASE_URL } from '../config/api';
+import type { AqiSource } from './aqiService';
+
+export type AqiSummarySource = AqiSource | 'all';
 
 export type AqiHistoryItem = {
   id: string;
@@ -15,6 +18,7 @@ export type AqiHistoryItem = {
 };
 
 export type AqiSummary = {
+  source: AqiSummarySource;
   totalReadings: number;
   latestReading: AqiHistoryItem | null;
   averageAqi: number | null;
@@ -23,12 +27,18 @@ export type AqiSummary = {
   generatedAt: string;
 };
 
+type GetAqiSummaryParams = {
+  source?: AqiSummarySource;
+};
+
 type AqiSummaryResponse = {
   success: boolean;
+  source: AqiSummarySource;
   data: AqiSummary;
 };
 
 const FALLBACK_SUMMARY: AqiSummary = {
+  source: 'mock',
   totalReadings: 0,
   latestReading: null,
   averageAqi: null,
@@ -37,9 +47,13 @@ const FALLBACK_SUMMARY: AqiSummary = {
   generatedAt: new Date().toISOString(),
 };
 
-export async function getAqiSummary(): Promise<AqiSummary> {
+export async function getAqiSummary({
+  source = 'all',
+}: GetAqiSummaryParams = {}): Promise<AqiSummary> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/aqi/summary`);
+    const response = await fetch(
+      `${API_BASE_URL}/api/aqi/summary?source=${source}`
+    );
 
     if (!response.ok) {
       throw new Error('No se pudo obtener el resumen AQI.');
@@ -55,6 +69,9 @@ export async function getAqiSummary(): Promise<AqiSummary> {
   } catch (error) {
     console.warn('Usando summary AQI fallback:', error);
 
-    return FALLBACK_SUMMARY;
+    return {
+      ...FALLBACK_SUMMARY,
+      source,
+    };
   }
 }

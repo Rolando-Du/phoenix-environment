@@ -20,9 +20,20 @@ type GetNearbyAqiParams = {
 
 export type AqiNearbySource = 'mock' | 'openaq';
 
+export type AqiHistorySource = AqiNearbySource | 'all';
+
 export type AqiNearbyResult = {
   source: AqiNearbySource;
   points: AqiPoint[];
+};
+
+export type GetAqiHistoryParams = {
+  source?: AqiHistorySource;
+  limit?: number;
+};
+
+export type GetAqiSummaryParams = {
+  source?: AqiHistorySource;
 };
 
 export type AqiHistoryItem = {
@@ -40,6 +51,7 @@ export type AqiHistoryItem = {
 };
 
 export type AqiSummary = {
+  source: AqiHistorySource;
   totalReadings: number;
   latestReading: AqiHistoryItem | null;
   averageAqi: number | null;
@@ -50,6 +62,8 @@ export type AqiSummary = {
 
 const DEFAULT_LATITUDE = -40.1579;
 const DEFAULT_LONGITUDE = -71.3534;
+const DEFAULT_HISTORY_LIMIT = 20;
+const MAX_HISTORY_LIMIT = 100;
 
 function buildMockAqiPoints(latitude: number, longitude: number): AqiPoint[] {
   return [
@@ -98,6 +112,24 @@ function buildMockAqiPoints(latitude: number, longitude: number): AqiPoint[] {
       },
     },
   ];
+}
+
+function normalizeHistoryLimit(limit?: number) {
+  if (!limit || !Number.isFinite(limit) || limit <= 0) {
+    return DEFAULT_HISTORY_LIMIT;
+  }
+
+  return Math.min(Math.floor(limit), MAX_HISTORY_LIMIT);
+}
+
+function buildSourceWhere(source: AqiHistorySource) {
+  if (source === 'all') {
+    return undefined;
+  }
+
+  return {
+    source,
+  };
 }
 
 async function saveAqiReadings(points: AqiPoint[], source: AqiNearbySource) {
@@ -155,12 +187,18 @@ export async function getNearbyAqiPoints({
   };
 }
 
-export async function getAqiHistory(): Promise<AqiHistoryItem[]> {
+export async function getAqiHistory({
+  source = 'all',
+  limit = DEFAULT_HISTORY_LIMIT,
+}: GetAqiHistoryParams = {}): Promise<AqiHistoryItem[]> {
+  const safeLimit = normalizeHistoryLimit(limit);
+
   const readings = await prisma.aqiReading.findMany({
+    where: buildSourceWhere(source),
     orderBy: {
       recordedAt: 'desc',
     },
-    take: 20,
+    take: safeLimit,
   });
 
   return readings.map((reading) => ({
@@ -178,17 +216,25 @@ export async function getAqiHistory(): Promise<AqiHistoryItem[]> {
   }));
 }
 
-export async function getAqiSummary(): Promise<AqiSummary> {
+export async function getAqiSummary({
+  source = 'all',
+}: GetAqiSummaryParams = {}): Promise<AqiSummary> {
+  const where = buildSourceWhere(source);
+
   const [totalReadings, latestReading, stats] = await Promise.all([
-    prisma.aqiReading.count(),
+    prisma.aqiReading.count({
+      where,
+    }),
 
     prisma.aqiReading.findFirst({
+      where,
       orderBy: {
         recordedAt: 'desc',
       },
     }),
 
     prisma.aqiReading.aggregate({
+      where,
       _avg: {
         value: true,
       },
@@ -202,6 +248,7 @@ export async function getAqiSummary(): Promise<AqiSummary> {
   ]);
 
   return {
+    source,
     totalReadings,
     latestReading: latestReading
       ? {

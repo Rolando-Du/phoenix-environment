@@ -1,25 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import type { Region } from 'react-native-maps';
+import { useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import MapView, { Marker } from "react-native-maps";
+import type { Region } from "react-native-maps";
 
-import AqiCard from '../components/AqiCard';
-import AqiMapMarker from '../components/AqiMapMarker';
-import AqiSummaryCard from '../components/AqiSummaryCard';
-import CurrentAlertCard from '../components/CurrentAlertCard';
-import MapHeaderPanel from '../components/MapHeaderPanel';
-import MapOptionsMenu from '../components/MapOptionsMenu';
-import type { AqiPoint } from '../data/aqiPoints';
-import { useUserLocation } from '../hooks/useUserLocation';
-import { getCurrentAlert } from '../services/alertService';
-import type { CurrentAlert } from '../services/alertService';
-import { getNearbyAqiPoints } from '../services/aqiService';
-import type { AqiSource } from '../services/aqiService';
-import { getAqiSummary } from '../services/aqiSummaryService';
-import type { AqiSummary } from '../services/aqiSummaryService';
-import { darkMapStyle } from '../theme/mapStyle';
+import AqiCard from "../components/AqiCard";
+import AqiMapMarker from "../components/AqiMapMarker";
+import AqiSummaryCard from "../components/AqiSummaryCard";
+import CurrentAlertCard from "../components/CurrentAlertCard";
+import MapHeaderPanel from "../components/MapHeaderPanel";
+import MapOptionsMenu from "../components/MapOptionsMenu";
+import type { AqiPoint } from "../data/aqiPoints";
+import { useUserLocation } from "../hooks/useUserLocation";
+import { getCurrentAlert } from "../services/alertService";
+import type { CurrentAlert } from "../services/alertService";
+import { getNearbyAqiPoints } from "../services/aqiService";
+import type { AqiSource } from "../services/aqiService";
+import { getAqiSummary } from "../services/aqiSummaryService";
+import type { AqiSummary } from "../services/aqiSummaryService";
+import { darkMapStyle } from "../theme/mapStyle";
 
-type ActivePanel = 'aqi' | 'summary' | 'alerts';
+type ActivePanel = "aqi" | "summary" | "alerts";
+type LocationMode = "user" | "demo";
 
 const DEFAULT_REGION: Region = {
   latitude: -40.1579,
@@ -28,20 +29,28 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
+const BUENOS_AIRES_REGION: Region = {
+  latitude: -34.6037,
+  longitude: -58.3816,
+  latitudeDelta: 0.09,
+  longitudeDelta: 0.09,
+};
+
 export default function MapScreen() {
   const mapRef = useRef<MapView | null>(null);
 
   const [aqiPoints, setAqiPoints] = useState<AqiPoint[]>([]);
   const [selectedAqiPoint, setSelectedAqiPoint] = useState<AqiPoint | null>(
-    null
+    null,
   );
 
-  const [aqiSource, setAqiSource] = useState<AqiSource>('mock');
+  const [aqiSource, setAqiSource] = useState<AqiSource>("mock");
   const [aqiSummary, setAqiSummary] = useState<AqiSummary | null>(null);
   const [currentAlert, setCurrentAlert] = useState<CurrentAlert | null>(null);
 
-  const [activePanel, setActivePanel] = useState<ActivePanel>('aqi');
+  const [activePanel, setActivePanel] = useState<ActivePanel>("aqi");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [locationMode, setLocationMode] = useState<LocationMode>("user");
 
   const { userLocation, loadingLocation, statusMessage } = useUserLocation();
 
@@ -49,16 +58,32 @@ export default function MapScreen() {
     if (loadingLocation) return;
 
     async function loadAqiData() {
+      const queryLocation =
+        locationMode === "demo"
+          ? {
+              latitude: BUENOS_AIRES_REGION.latitude,
+              longitude: BUENOS_AIRES_REGION.longitude,
+            }
+          : userLocation
+            ? {
+                latitude: userLocation.coords.latitude,
+                longitude: userLocation.coords.longitude,
+              }
+            : undefined;
+
       const nearbyResult = await getNearbyAqiPoints({
-        latitude: userLocation?.coords.latitude,
-        longitude: userLocation?.coords.longitude,
+        latitude: queryLocation?.latitude,
+        longitude: queryLocation?.longitude,
       });
 
       setAqiSource(nearbyResult.source);
       setAqiPoints(nearbyResult.points);
       setSelectedAqiPoint(nearbyResult.points[0] ?? null);
 
-      const summary = await getAqiSummary();
+      const summary = await getAqiSummary({
+        source: nearbyResult.source,
+      });
+
       setAqiSummary(summary);
 
       const alert = await getCurrentAlert();
@@ -66,9 +91,14 @@ export default function MapScreen() {
     }
 
     loadAqiData();
-  }, [loadingLocation, userLocation]);
+  }, [loadingLocation, userLocation, locationMode]);
 
   useEffect(() => {
+    if (locationMode === "demo") {
+      mapRef.current?.animateToRegion(BUENOS_AIRES_REGION, 1000);
+      return;
+    }
+
     if (!userLocation) return;
 
     const userRegion: Region = {
@@ -79,11 +109,11 @@ export default function MapScreen() {
     };
 
     mapRef.current?.animateToRegion(userRegion, 1000);
-  }, [userLocation]);
+  }, [locationMode, userLocation]);
 
   function handleSelectAqiPoint(point: AqiPoint) {
     setSelectedAqiPoint(point);
-    setActivePanel('aqi');
+    setActivePanel("aqi");
     setMenuOpen(false);
 
     mapRef.current?.animateToRegion(
@@ -93,12 +123,24 @@ export default function MapScreen() {
         latitudeDelta: 0.035,
         longitudeDelta: 0.035,
       },
-      700
+      700,
     );
   }
 
   function handleSelectPanel(panel: ActivePanel) {
     setActivePanel(panel);
+    setMenuOpen(false);
+  }
+
+  function handleUseDemoLocation() {
+    setLocationMode("demo");
+    setActivePanel("aqi");
+    setMenuOpen(false);
+  }
+
+  function handleUseUserLocation() {
+    setLocationMode("user");
+    setActivePanel("aqi");
     setMenuOpen(false);
   }
 
@@ -134,34 +176,39 @@ export default function MapScreen() {
         )}
       </MapView>
 
+      <MapHeaderPanel
+        loading={loadingLocation}
+        statusMessage={
+          locationMode === "demo"
+            ? "Modo demo: Buenos Aires seleccionado."
+            : statusMessage
+        }
+      />
+
       <MapOptionsMenu
         open={menuOpen}
         activePanel={activePanel}
         onToggle={() => setMenuOpen((current) => !current)}
         onSelect={handleSelectPanel}
+        onUseDemoLocation={handleUseDemoLocation}
+        onUseUserLocation={handleUseUserLocation}
       />
-
-      <MapHeaderPanel
-        loading={loadingLocation}
-        statusMessage={statusMessage}
-      />
-
       <View style={styles.bottomPanel}>
-        {activePanel === 'summary' && aqiSummary && (
+        {activePanel === "summary" && aqiSummary && (
           <AqiSummaryCard
             summary={aqiSummary}
-            onClose={() => setActivePanel('aqi')}
+            onClose={() => setActivePanel("aqi")}
           />
         )}
 
-        {activePanel === 'alerts' && currentAlert && (
+        {activePanel === "alerts" && currentAlert && (
           <CurrentAlertCard
             alert={currentAlert}
-            onClose={() => setActivePanel('aqi')}
+            onClose={() => setActivePanel("aqi")}
           />
         )}
 
-        {activePanel === 'aqi' && selectedAqiPoint && (
+        {activePanel === "aqi" && selectedAqiPoint && (
           <AqiCard
             title={selectedAqiPoint.title}
             value={selectedAqiPoint.value}
@@ -178,13 +225,13 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: "#020617",
   },
   map: {
     flex: 1,
   },
   bottomPanel: {
-    position: 'absolute',
+    position: "absolute",
     left: 20,
     right: 20,
     bottom: 32,

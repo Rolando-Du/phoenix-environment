@@ -5,6 +5,33 @@ import {
   getAqiSummary,
   getNearbyAqiPoints,
 } from '../services/aqi.service';
+import type { AqiHistorySource } from '../services/aqi.service';
+
+function parseHistorySource(source: unknown): AqiHistorySource | null {
+  if (source === undefined) {
+    return 'all';
+  }
+
+  if (source === 'all' || source === 'mock' || source === 'openaq') {
+    return source;
+  }
+
+  return null;
+}
+
+function parseLimit(limit: unknown): number | undefined {
+  if (limit === undefined) {
+    return undefined;
+  }
+
+  const parsedLimit = Number(limit);
+
+  if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
+    return undefined;
+  }
+
+  return parsedLimit;
+}
 
 export async function getNearbyAqi(req: Request, res: Response) {
   const latitude = req.query.lat ? Number(req.query.lat) : undefined;
@@ -39,21 +66,47 @@ export async function getNearbyAqi(req: Request, res: Response) {
   });
 }
 
-export async function getAqiHistoryController(_req: Request, res: Response) {
-  const history = await getAqiHistory();
+export async function getAqiHistoryController(req: Request, res: Response) {
+  const source = parseHistorySource(req.query.source);
+  const limit = parseLimit(req.query.limit);
+
+  if (!source) {
+    return res.status(400).json({
+      success: false,
+      message: 'El parámetro source debe ser: all, mock u openaq.',
+    });
+  }
+
+  const history = await getAqiHistory({
+    source,
+    limit,
+  });
 
   return res.status(200).json({
     success: true,
+    source,
     count: history.length,
     data: history,
   });
 }
 
-export async function getAqiSummaryController(_req: Request, res: Response) {
-  const summary = await getAqiSummary();
+export async function getAqiSummaryController(req: Request, res: Response) {
+  const source = parseHistorySource(req.query.source);
+
+  if (!source) {
+    return res.status(400).json({
+      success: false,
+      message: 'El parámetro source debe ser: all, mock u openaq.',
+    });
+  }
+
+  const summary = await getAqiSummary({
+    source,
+  });
 
   return res.status(200).json({
     success: true,
+    source,
     data: summary,
   });
 }
