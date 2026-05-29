@@ -1,11 +1,23 @@
+
 # Phoenix API
 
-Backend de Phoenix Environment para monitoreo ambiental de calidad del aire.
+Backend de Phoenix Environment para monitoreo ambiental de calidad del aire y clima actual.
 
-La API consulta datos reales desde:
+La API consulta datos reales desde distintas fuentes externas para entregar información ambiental por coordenadas.
+
+---
+
+## Fuentes de datos
+
+### Calidad del aire
 
 * **OpenAQ** : fuente primaria basada en estaciones de monitoreo ambiental.
 * **Open-Meteo Air Quality** : fuente secundaria real por coordenadas cuando no hay estaciones OpenAQ cercanas.
+
+### Clima actual
+
+* **Open-Meteo Weather** : fuente principal para temperatura, sensación térmica, humedad, viento y estado del clima.
+* **OpenWeather** : fuente fallback para clima actual cuando Open-Meteo limita solicitudes o no responde.
 
 ---
 
@@ -19,6 +31,8 @@ La API consulta datos reales desde:
 * Neon Database
 * OpenAQ API
 * Open-Meteo Air Quality API
+* Open-Meteo Weather API
+* OpenWeather API
 
 ---
 
@@ -57,7 +71,10 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST.neon.tech/DB_NAME?sslmode=require"
 DIRECT_URL="postgresql://USER:PASSWORD@HOST.neon.tech/DB_NAME?sslmode=require"
 
 OPENAQ_API_KEY="your_openaq_api_key_here"
+OPENWEATHER_API_KEY="your_openweather_api_key_here"
 ```
+
+> `OPENWEATHER_API_KEY` se usa como respaldo climático cuando Open-Meteo Weather no responde o limita solicitudes.
 
 ---
 
@@ -117,7 +134,7 @@ Devuelve el estado del sistema.
 
 ---
 
-### Calidad del aire
+## Calidad del aire
 
 ```http
 GET /api/aqi/nearby?lat=-39.9504&lng=-71.0695
@@ -154,7 +171,7 @@ Ejemplo de respuesta:
 
 ---
 
-### Historial AQI
+## Historial AQI
 
 ```http
 GET /api/aqi/history
@@ -184,7 +201,7 @@ all
 
 ---
 
-### Resumen AQI
+## Resumen AQI
 
 ```http
 GET /api/aqi/summary
@@ -206,7 +223,74 @@ Resumen filtrado por Open-Meteo.
 
 ---
 
-### Alertas
+## Clima actual
+
+```http
+GET /api/weather/current?lat=-39.9504&lng=-71.0695
+```
+
+Obtiene clima actual por coordenadas.
+
+Puede devolver datos desde:
+
+```txt
+openmeteo
+openweather
+```
+
+Ejemplo de respuesta con datos disponibles:
+
+```json
+{
+  "success": true,
+  "source": "openmeteo",
+  "data": {
+    "temperature": 8.2,
+    "apparentTemperature": 6.7,
+    "humidity": 89,
+    "windSpeed": 4.2,
+    "weatherCode": 1,
+    "weatherLabel": "Parcialmente nublado",
+    "source": "openmeteo",
+    "available": true,
+    "cached": false,
+    "generatedAt": "2026-05-29T21:53:27.446Z",
+    "coordinate": {
+      "latitude": -40.1579,
+      "longitude": -71.3534
+    }
+  }
+}
+```
+
+Ejemplo de respuesta cuando el clima externo no está disponible:
+
+```json
+{
+  "success": true,
+  "source": "openmeteo",
+  "data": {
+    "temperature": null,
+    "apparentTemperature": null,
+    "humidity": null,
+    "windSpeed": null,
+    "weatherCode": null,
+    "weatherLabel": "Clima temporalmente no disponible",
+    "source": "openmeteo",
+    "available": false,
+    "cached": false,
+    "generatedAt": "2026-05-29T22:36:15.486Z",
+    "coordinate": {
+      "latitude": -40.1579,
+      "longitude": -71.3534
+    }
+  }
+}
+```
+
+---
+
+## Alertas
 
 ```http
 GET /api/alerts/current
@@ -218,7 +302,7 @@ Devuelve la alerta ambiental actual usando lecturas reales recientes.
 
 ## Flujo de fuentes AQI
 
-Phoenix consulta las fuentes en este orden:
+Phoenix consulta las fuentes de calidad del aire en este orden:
 
 ```txt
 1. OpenAQ
@@ -228,13 +312,46 @@ Phoenix consulta las fuentes en este orden:
 
 OpenAQ se usa cuando existen estaciones cercanas.
 
-Open-Meteo se usa cuando no hay estaciones cercanas, consultando datos reales por coordenadas.
+Open-Meteo Air Quality se usa cuando no hay estaciones cercanas, consultando datos reales por coordenadas.
 
 ---
 
-## Persistencia
+## Flujo de fuentes climáticas
 
-Phoenix guarda en Neon solo datos reales:
+Phoenix consulta clima actual en este orden:
+
+```txt
+1. Open-Meteo Weather
+2. OpenWeather
+3. Clima temporalmente no disponible
+```
+
+Si Open-Meteo responde correctamente, Phoenix usa esa fuente.
+
+Si Open-Meteo devuelve error o limita solicitudes, Phoenix intenta obtener clima desde OpenWeather.
+
+Si ambas fuentes fallan, Phoenix devuelve una respuesta controlada con `available: false`, sin romper la API ni el mobile.
+
+---
+
+## Caché climático
+
+El clima actual se cachea temporalmente en memoria para reducir llamadas externas.
+
+Esto ayuda a evitar errores por exceso de solicitudes, especialmente al tocar varios puntos cercanos en el mapa.
+
+```txt
+Datos climáticos disponibles: caché temporal
+Datos climáticos no disponibles: caché temporal más corto
+```
+
+Actualmente el clima no se persiste en Neon.
+
+---
+
+## Persistencia AQI
+
+Phoenix guarda en Neon solo datos reales de calidad del aire:
 
 ```txt
 openaq
@@ -277,6 +394,12 @@ Ejecutar backend:
 pnpm dev
 ```
 
+Validar TypeScript:
+
+```bash
+pnpm build
+```
+
 Validar schema Prisma:
 
 ```bash
@@ -303,18 +426,52 @@ pnpm exec prisma studio
 
 ---
 
+## Deploy en Render
+
+Configuración recomendada:
+
+```txt
+Root Directory: phoenix-server
+Build Command: pnpm install && pnpm exec prisma migrate deploy && pnpm build
+Start Command: pnpm start
+Health Check Path: /health
+```
+
+Variables necesarias en Render:
+
+```env
+NODE_ENV=production
+PORT=10000
+DATABASE_URL=your_neon_database_url
+DIRECT_URL=your_neon_direct_url
+OPENAQ_API_KEY=your_openaq_api_key
+OPENWEATHER_API_KEY=your_openweather_api_key
+```
+
+---
+
 ## Estado actual
 
 El backend ya soporta:
 
 * Consulta AQI por ubicación.
+* Consulta AQI por punto seleccionado en mapa.
 * OpenAQ como fuente primaria.
-* Open-Meteo como fuente real por coordenadas.
+* Open-Meteo Air Quality como fuente real por coordenadas.
+* Clima actual por coordenadas.
+* Temperatura.
+* Sensación térmica.
+* Humedad.
+* Viento.
+* Estado del clima.
+* Open-Meteo Weather como fuente principal de clima.
+* OpenWeather como fallback climático.
 * Historial AQI.
 * Summary AQI.
 * Alertas recientes.
-* Persistencia en Neon.
+* Persistencia AQI en Neon.
 * Prevención de duplicados recientes.
+* Caché temporal para clima.
 * Health check.
 * Endpoint raíz documentado.
 
