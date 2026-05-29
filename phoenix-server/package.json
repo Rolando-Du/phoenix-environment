@@ -1,15 +1,24 @@
 {
   "name": "phoenix-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend de Phoenix Environment para monitoreo ambiental de calidad del aire.",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:deploy": "prisma migrate deploy",
+    "postinstall": "prisma generate"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "phoenix",
+    "environment",
+    "air-quality",
+    "aqi",
+    "openaq",
+    "openmeteo"
+  ],
+  "author": "Rolando Du / Yani Leiba",
   "license": "ISC",
   "devEngines": {
     "packageManager": {

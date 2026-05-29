@@ -7,8 +7,6 @@ type MapOptionsMenuProps = {
   activePanel: ActivePanel;
   onToggle: () => void;
   onSelect: (panel: ActivePanel) => void;
-  onUseDemoLocation: () => void;
-  onUseUserLocation: () => void;
 };
 
 export default function MapOptionsMenu({
@@ -16,8 +14,6 @@ export default function MapOptionsMenu({
   activePanel,
   onToggle,
   onSelect,
-  onUseDemoLocation,
-  onUseUserLocation,
 }: MapOptionsMenuProps) {
   return (
     <View style={styles.container}>
@@ -66,16 +62,6 @@ export default function MapOptionsMenu({
           >
             <Text style={styles.optionText}>Historial</Text>
           </Pressable>
-
-          <View style={styles.separator} />
-
-          <Pressable style={styles.option} onPress={onUseDemoLocation}>
-            <Text style={styles.optionText}>Probar Buenos Aires</Text>
-          </Pressable>
-
-          <Pressable style={styles.option} onPress={onUseUserLocation}>
-            <Text style={styles.optionText}>Volver a mi ubicación</Text>
-          </Pressable>
         </View>
       )}
     </View>
@@ -109,7 +95,7 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     marginTop: 10,
-    width: 220,
+    width: 180,
     backgroundColor: "rgba(15, 23, 42, 0.98)",
     borderRadius: 18,
     padding: 8,
@@ -130,10 +116,5 @@ const styles = StyleSheet.create({
     color: "#f8fafc",
     fontSize: 13,
     fontWeight: "900",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "rgba(148, 163, 184, 0.2)",
-    marginVertical: 6,
   },
 });

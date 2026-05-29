@@ -26,20 +26,12 @@ import type {
 import { darkMapStyle } from "../theme/mapStyle";
 
 type ActivePanel = "aqi" | "summary" | "alerts" | "history";
-type LocationMode = "user" | "demo";
 
 const DEFAULT_REGION: Region = {
   latitude: -40.1579,
   longitude: -71.3534,
   latitudeDelta: 0.08,
   longitudeDelta: 0.08,
-};
-
-const BUENOS_AIRES_REGION: Region = {
-  latitude: -34.6037,
-  longitude: -58.3816,
-  latitudeDelta: 0.09,
-  longitudeDelta: 0.09,
 };
 
 function getPersistedSource(source: AqiSource): AqiSummarySource {
@@ -65,7 +57,6 @@ export default function MapScreen() {
 
   const [activePanel, setActivePanel] = useState<ActivePanel>("aqi");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [locationMode, setLocationMode] = useState<LocationMode>("user");
 
   const { userLocation, loadingLocation, statusMessage } = useUserLocation();
 
@@ -73,22 +64,9 @@ export default function MapScreen() {
     if (loadingLocation) return;
 
     async function loadAqiData() {
-      const queryLocation =
-        locationMode === "demo"
-          ? {
-              latitude: BUENOS_AIRES_REGION.latitude,
-              longitude: BUENOS_AIRES_REGION.longitude,
-            }
-          : userLocation
-            ? {
-                latitude: userLocation.coords.latitude,
-                longitude: userLocation.coords.longitude,
-              }
-            : undefined;
-
       const nearbyResult = await getNearbyAqiPoints({
-        latitude: queryLocation?.latitude,
-        longitude: queryLocation?.longitude,
+        latitude: userLocation?.coords.latitude,
+        longitude: userLocation?.coords.longitude,
       });
 
       const persistedSource = getPersistedSource(nearbyResult.source);
@@ -115,14 +93,9 @@ export default function MapScreen() {
     }
 
     loadAqiData();
-  }, [loadingLocation, userLocation, locationMode]);
+  }, [loadingLocation, userLocation]);
 
   useEffect(() => {
-    if (locationMode === "demo") {
-      mapRef.current?.animateToRegion(BUENOS_AIRES_REGION, 1000);
-      return;
-    }
-
     if (!userLocation) return;
 
     const userRegion: Region = {
@@ -133,7 +106,7 @@ export default function MapScreen() {
     };
 
     mapRef.current?.animateToRegion(userRegion, 1000);
-  }, [locationMode, userLocation]);
+  }, [userLocation]);
 
   function handleSelectAqiPoint(point: AqiPoint) {
     setSelectedAqiPoint(point);
@@ -153,18 +126,6 @@ export default function MapScreen() {
 
   function handleSelectPanel(panel: ActivePanel) {
     setActivePanel(panel);
-    setMenuOpen(false);
-  }
-
-  function handleUseDemoLocation() {
-    setLocationMode("demo");
-    setActivePanel("aqi");
-    setMenuOpen(false);
-  }
-
-  function handleUseUserLocation() {
-    setLocationMode("user");
-    setActivePanel("aqi");
     setMenuOpen(false);
   }
 
@@ -202,11 +163,7 @@ export default function MapScreen() {
 
       <MapHeaderPanel
         loading={loadingLocation}
-        statusMessage={
-          locationMode === "demo"
-            ? "Modo demo: Buenos Aires seleccionado."
-            : statusMessage
-        }
+        statusMessage={statusMessage}
       />
 
       <MapOptionsMenu
@@ -214,8 +171,6 @@ export default function MapScreen() {
         activePanel={activePanel}
         onToggle={() => setMenuOpen((current) => !current)}
         onSelect={handleSelectPanel}
-        onUseDemoLocation={handleUseDemoLocation}
-        onUseUserLocation={handleUseUserLocation}
       />
 
       <View style={styles.bottomPanel}>
