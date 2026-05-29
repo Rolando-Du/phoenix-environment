@@ -17,7 +17,7 @@ model AqiReading {
   value      Int
   pm25       Float
   pm10       Float
-  source     String   @default("mock")
+  source     String
   recordedAt DateTime @default(now())
   createdAt  DateTime @default(now())
 
