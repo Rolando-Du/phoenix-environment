@@ -6,6 +6,7 @@ export type CurrentWeather = {
   weatherCode: number | null;
   weatherLabel: string;
   source: 'openmeteo';
+  cached: boolean;
   generatedAt: Date;
   coordinate: {
     latitude: number;
@@ -26,7 +27,15 @@ type OpenMeteoWeatherResponse = {
   };
 };
 
+type WeatherCacheEntry = {
+  expiresAt: number;
+  data: CurrentWeather;
+};
+
 const OPEN_METEO_WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
+
+const WEATHER_CACHE_TTL_MINUTES = 15;
+const weatherCache = new Map<string, WeatherCacheEntry>();
 
 function buildOpenMeteoWeatherUrl(latitude: number, longitude: number) {
   const params = new URLSearchParams({
@@ -84,13 +93,68 @@ function getWeatherLabel(weatherCode: number | null) {
   return 'Condición climática variable';
 }
 
+function buildCacheKey(latitude: number, longitude: number) {
+  const roundedLatitude = latitude.toFixed(3);
+  const roundedLongitude = longitude.toFixed(3);
+
+  return `${roundedLatitude},${roundedLongitude}`;
+}
+
+function getCachedWeather(latitude: number, longitude: number) {
+  const cacheKey = buildCacheKey(latitude, longitude);
+  const cachedEntry = weatherCache.get(cacheKey);
+
+  if (!cachedEntry) {
+    return null;
+  }
+
+  if (cachedEntry.expiresAt < Date.now()) {
+    weatherCache.delete(cacheKey);
+    return null;
+  }
+
+  return {
+    ...cachedEntry.data,
+    cached: true,
+  };
+}
+
+function saveWeatherToCache(weather: CurrentWeather) {
+  const cacheKey = buildCacheKey(
+    weather.coordinate.latitude,
+    weather.coordinate.longitude
+  );
+
+  weatherCache.set(cacheKey, {
+    expiresAt: Date.now() + WEATHER_CACHE_TTL_MINUTES * 60 * 1000,
+    data: weather,
+  });
+}
+
 export async function getCurrentWeather(
   latitude: number,
   longitude: number
 ): Promise<CurrentWeather> {
-  const response = await fetch(buildOpenMeteoWeatherUrl(latitude, longitude));
+  const cachedWeather = getCachedWeather(latitude, longitude);
+
+  if (cachedWeather) {
+    return cachedWeather;
+  }
+
+  const response = await fetch(buildOpenMeteoWeatherUrl(latitude, longitude), {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'PhoenixEnvironment/1.0',
+    },
+  });
 
   if (!response.ok) {
+    const fallbackCachedWeather = getCachedWeather(latitude, longitude);
+
+    if (fallbackCachedWeather) {
+      return fallbackCachedWeather;
+    }
+
     throw new Error(`Open-Meteo Weather respondió con status ${response.status}`);
   }
 
@@ -118,7 +182,7 @@ export async function getCurrentWeather(
     ? current.weather_code
     : null;
 
-  return {
+  const weather: CurrentWeather = {
     temperature,
     apparentTemperature,
     humidity,
@@ -126,10 +190,15 @@ export async function getCurrentWeather(
     weatherCode,
     weatherLabel: getWeatherLabel(weatherCode),
     source: 'openmeteo',
+    cached: false,
     generatedAt: new Date(),
     coordinate: {
       latitude,
       longitude,
     },
   };
+
+  saveWeatherToCache(weather);
+
+  return weather;
 }
