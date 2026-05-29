@@ -2,17 +2,28 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { AqiHistoryItem } from '../services/aqiHistoryService';
 
+type AqiHistorySource = 'openaq' | 'openmeteo' | 'all' | 'unavailable';
+
 type AqiHistoryCardProps = {
   history: AqiHistoryItem[];
-  source: 'mock' | 'openaq' | 'all';
+  source: AqiHistorySource;
   onClose: () => void;
 };
 
-function getSourceLabel(source: AqiHistoryCardProps['source']) {
+function getSourceLabel(source: AqiHistorySource) {
   if (source === 'openaq') return 'OpenAQ real';
-  if (source === 'mock') return 'Mock temporal';
+  if (source === 'openmeteo') return 'Open-Meteo real';
+  if (source === 'unavailable') return 'Sin datos';
 
   return 'Mixto';
+}
+
+function getSourceColor(source: AqiHistorySource) {
+  if (source === 'openaq') return '#22c55e';
+  if (source === 'openmeteo') return '#38bdf8';
+  if (source === 'unavailable') return '#94a3b8';
+
+  return '#a78bfa';
 }
 
 function formatTime(date: string) {
@@ -27,12 +38,16 @@ export default function AqiHistoryCard({
   source,
   onClose,
 }: AqiHistoryCardProps) {
+  const sourceColor = getSourceColor(source);
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderColor: sourceColor }]}>
       <View style={styles.header}>
         <View>
           <Text style={styles.label}>HISTORIAL AQI</Text>
-          <Text style={styles.title}>{getSourceLabel(source)}</Text>
+          <Text style={[styles.title, { color: sourceColor }]}>
+            {getSourceLabel(source)}
+          </Text>
         </View>
 
         <Pressable style={styles.closeButton} onPress={onClose}>
@@ -73,7 +88,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
   },
   header: {
     flexDirection: 'row',
@@ -88,7 +102,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   title: {
-    color: '#f8fafc',
     fontSize: 15,
     fontWeight: '900',
     marginTop: 2,

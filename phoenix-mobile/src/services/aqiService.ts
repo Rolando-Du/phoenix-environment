@@ -1,5 +1,4 @@
 import { API_BASE_URL } from '../config/api';
-import { AQI_POINTS } from '../data/aqiPoints';
 import type { AqiPoint } from '../data/aqiPoints';
 
 type GetNearbyAqiPointsParams = {
@@ -7,7 +6,7 @@ type GetNearbyAqiPointsParams = {
   longitude?: number;
 };
 
-export type AqiSource = 'mock' | 'openaq';
+export type AqiSource = 'openaq' | 'openmeteo' | 'unavailable';
 
 export type NearbyAqiResult = {
   source: AqiSource;
@@ -22,8 +21,8 @@ type AqiNearbyResponse = {
 };
 
 const FALLBACK_AQI_RESULT: NearbyAqiResult = {
-  source: 'mock',
-  points: AQI_POINTS,
+  source: 'unavailable',
+  points: [],
 };
 
 export async function getNearbyAqiPoints({
@@ -64,7 +63,7 @@ export async function getNearbyAqiPoints({
       points: result.data,
     };
   } catch (error) {
-    console.warn('Usando datos AQI mock por fallback:', error);
+    console.warn('No se pudo obtener AQI real:', error);
 
     return FALLBACK_AQI_RESULT;
   }

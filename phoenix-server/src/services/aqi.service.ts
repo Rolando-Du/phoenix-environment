@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import { getOpenAqNearbyPoints } from './openAq.service';
+import { getOpenMeteoAqiPoint } from './openMeteo.service';
 
 export type AqiPoint = {
   id: string;
@@ -18,9 +19,11 @@ type GetNearbyAqiParams = {
   longitude?: number;
 };
 
-export type AqiNearbySource = 'mock' | 'openaq';
+export type AqiPersistedSource = 'openaq' | 'openmeteo';
 
-export type AqiHistorySource = AqiNearbySource | 'all';
+export type AqiNearbySource = AqiPersistedSource | 'unavailable';
+
+export type AqiHistorySource = AqiPersistedSource | 'all';
 
 export type AqiNearbyResult = {
   source: AqiNearbySource;
@@ -65,55 +68,6 @@ const DEFAULT_LONGITUDE = -71.3534;
 const DEFAULT_HISTORY_LIMIT = 20;
 const MAX_HISTORY_LIMIT = 100;
 
-function buildMockAqiPoints(latitude: number, longitude: number): AqiPoint[] {
-  return [
-    {
-      id: 'user-zone',
-      title: 'Tu zona',
-      value: 42,
-      pm25: 8,
-      pm10: 18,
-      coordinate: {
-        latitude,
-        longitude,
-      },
-    },
-    {
-      id: 'north-zone',
-      title: 'Zona norte',
-      value: 80,
-      pm25: 18,
-      pm10: 34,
-      coordinate: {
-        latitude: latitude + 0.015,
-        longitude: longitude + 0.012,
-      },
-    },
-    {
-      id: 'south-zone',
-      title: 'Zona sur',
-      value: 130,
-      pm25: 31,
-      pm10: 58,
-      coordinate: {
-        latitude: latitude - 0.015,
-        longitude: longitude - 0.012,
-      },
-    },
-    {
-      id: 'west-zone',
-      title: 'Zona oeste',
-      value: 180,
-      pm25: 46,
-      pm10: 82,
-      coordinate: {
-        latitude: latitude + 0.006,
-        longitude: longitude - 0.02,
-      },
-    },
-  ];
-}
-
 function normalizeHistoryLimit(limit?: number) {
   if (!limit || !Number.isFinite(limit) || limit <= 0) {
     return DEFAULT_HISTORY_LIMIT;
@@ -132,7 +86,9 @@ function buildSourceWhere(source: AqiHistorySource) {
   };
 }
 
-async function saveAqiReadings(points: AqiPoint[], source: 'openaq') {
+async function saveAqiReadings(points: AqiPoint[], source: AqiPersistedSource) {
+  if (points.length === 0) return;
+
   try {
     await prisma.aqiReading.createMany({
       data: points.map((point) => ({
@@ -173,17 +129,37 @@ export async function getNearbyAqiPoints({
     }
 
     console.warn(
-      'OpenAQ no devolvió puntos cercanos. Usando mock temporal sin guardar en base.'
+      'OpenAQ no devolvió puntos cercanos. Intentando Open-Meteo.'
     );
   } catch (error) {
     console.error('No se pudieron obtener datos desde OpenAQ:', error);
   }
 
-  const mockPoints = buildMockAqiPoints(baseLatitude, baseLongitude);
+  try {
+    const openMeteoPoint = await getOpenMeteoAqiPoint(
+      baseLatitude,
+      baseLongitude
+    );
+
+    if (openMeteoPoint) {
+      const openMeteoPoints: AqiPoint[] = [openMeteoPoint];
+
+      await saveAqiReadings(openMeteoPoints, 'openmeteo');
+
+      return {
+        source: 'openmeteo',
+        points: openMeteoPoints,
+      };
+    }
+
+    console.warn('Open-Meteo no devolvió datos útiles.');
+  } catch (error) {
+    console.error('No se pudieron obtener datos desde Open-Meteo:', error);
+  }
 
   return {
-    source: 'mock',
-    points: mockPoints,
+    source: 'unavailable',
+    points: [],
   };
 }
 

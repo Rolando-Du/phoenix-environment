@@ -12,6 +12,7 @@ export type CurrentAlert = {
 };
 
 const RECENT_WINDOW_MINUTES = 30;
+const REAL_AQI_SOURCES = ['openaq', 'openmeteo'];
 
 function buildAlertFromAqi(maxAqi: number | null): CurrentAlert {
   if (maxAqi === null) {
@@ -20,7 +21,7 @@ function buildAlertFromAqi(maxAqi: number | null): CurrentAlert {
       level: 'info',
       title: 'Sin datos reales recientes',
       message:
-        'No hay lecturas reales recientes de OpenAQ para generar alertas ambientales.',
+        'No hay lecturas reales recientes de OpenAQ u Open-Meteo para generar alertas ambientales.',
       maxAqi: null,
       generatedAt: new Date(),
     };
@@ -83,7 +84,9 @@ export async function getCurrentAlert(): Promise<CurrentAlert> {
 
   const stats = await prisma.aqiReading.aggregate({
     where: {
-      source: 'openaq',
+      source: {
+        in: REAL_AQI_SOURCES,
+      },
       recordedAt: {
         gte: recentDateLimit,
       },

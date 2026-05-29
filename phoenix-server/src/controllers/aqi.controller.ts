@@ -8,11 +8,29 @@ import {
 import type { AqiHistorySource } from '../services/aqi.service';
 
 function parseHistorySource(source: unknown): AqiHistorySource | null {
-  if (source === undefined) {
+  if (source === undefined || source === '') {
     return 'all';
   }
 
-  if (source === 'all' || source === 'mock' || source === 'openaq') {
+  if (Array.isArray(source)) {
+    const firstSource = source[0];
+
+    if (
+      firstSource === undefined ||
+      firstSource === '' ||
+      firstSource === 'all'
+    ) {
+      return 'all';
+    }
+
+    if (firstSource === 'openaq' || firstSource === 'openmeteo') {
+      return firstSource;
+    }
+
+    return null;
+  }
+
+  if (source === 'all' || source === 'openaq' || source === 'openmeteo') {
     return source;
   }
 
@@ -73,7 +91,7 @@ export async function getAqiHistoryController(req: Request, res: Response) {
   if (!source) {
     return res.status(400).json({
       success: false,
-      message: 'El parámetro source debe ser: all, mock u openaq.',
+      message: 'El parámetro source debe ser: all, openaq u openmeteo.',
     });
   }
 
@@ -96,7 +114,7 @@ export async function getAqiSummaryController(req: Request, res: Response) {
   if (!source) {
     return res.status(400).json({
       success: false,
-      message: 'El parámetro source debe ser: all, mock u openaq.',
+      message: 'El parámetro source debe ser: all, openaq u openmeteo.',
     });
   }
 

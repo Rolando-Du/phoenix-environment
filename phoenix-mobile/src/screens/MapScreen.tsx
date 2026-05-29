@@ -19,7 +19,10 @@ import type { AqiHistoryItem } from "../services/aqiHistoryService";
 import { getNearbyAqiPoints } from "../services/aqiService";
 import type { AqiSource } from "../services/aqiService";
 import { getAqiSummary } from "../services/aqiSummaryService";
-import type { AqiSummary } from "../services/aqiSummaryService";
+import type {
+  AqiSummary,
+  AqiSummarySource,
+} from "../services/aqiSummaryService";
 import { darkMapStyle } from "../theme/mapStyle";
 
 type ActivePanel = "aqi" | "summary" | "alerts" | "history";
@@ -39,6 +42,14 @@ const BUENOS_AIRES_REGION: Region = {
   longitudeDelta: 0.09,
 };
 
+function getPersistedSource(source: AqiSource): AqiSummarySource {
+  if (source === "openaq" || source === "openmeteo") {
+    return source;
+  }
+
+  return "all";
+}
+
 export default function MapScreen() {
   const mapRef = useRef<MapView | null>(null);
 
@@ -47,7 +58,7 @@ export default function MapScreen() {
     null,
   );
 
-  const [aqiSource, setAqiSource] = useState<AqiSource>("mock");
+  const [aqiSource, setAqiSource] = useState<AqiSource>("unavailable");
   const [aqiSummary, setAqiSummary] = useState<AqiSummary | null>(null);
   const [aqiHistory, setAqiHistory] = useState<AqiHistoryItem[]>([]);
   const [currentAlert, setCurrentAlert] = useState<CurrentAlert | null>(null);
@@ -80,18 +91,20 @@ export default function MapScreen() {
         longitude: queryLocation?.longitude,
       });
 
+      const persistedSource = getPersistedSource(nearbyResult.source);
+
       setAqiSource(nearbyResult.source);
       setAqiPoints(nearbyResult.points);
       setSelectedAqiPoint(nearbyResult.points[0] ?? null);
 
       const summary = await getAqiSummary({
-        source: nearbyResult.source,
+        source: persistedSource,
       });
 
       setAqiSummary(summary);
 
       const history = await getAqiHistory({
-        source: nearbyResult.source,
+        source: persistedSource,
         limit: 10,
       });
 

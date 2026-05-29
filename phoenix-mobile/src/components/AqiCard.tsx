@@ -16,7 +16,35 @@ function getSourceLabel(source: AqiSource) {
     return 'OpenAQ';
   }
 
-  return 'Mock temporal';
+  if (source === 'openmeteo') {
+    return 'Open-Meteo';
+  }
+
+  return 'Sin datos';
+}
+
+function getSourceDescription(source: AqiSource) {
+  if (source === 'openaq') {
+    return 'Dato real de estación';
+  }
+
+  if (source === 'openmeteo') {
+    return 'Dato real por coordenada';
+  }
+
+  return 'No disponible';
+}
+
+function getSourceColor(source: AqiSource) {
+  if (source === 'openaq') {
+    return '#22c55e';
+  }
+
+  if (source === 'openmeteo') {
+    return '#38bdf8';
+  }
+
+  return '#94a3b8';
 }
 
 export default function AqiCard({
@@ -27,9 +55,10 @@ export default function AqiCard({
   source,
 }: AqiCardProps) {
   const aqiStatus = getAqiStatus(value);
+  const sourceColor = getSourceColor(source);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderColor: sourceColor }]}>
       <View style={styles.leftColumn}>
         <Text style={styles.label}>AQI ACTUAL</Text>
         <Text style={styles.value}>{value}</Text>
@@ -47,14 +76,20 @@ export default function AqiCard({
             </Text>
           </View>
 
-          <View style={styles.sourceBadge}>
+          <View style={[styles.sourceBadge, { borderColor: sourceColor }]}>
             <Text style={styles.sourceLabel}>Fuente</Text>
-            <Text style={styles.sourceValue}>{getSourceLabel(source)}</Text>
+            <Text style={[styles.sourceValue, { color: sourceColor }]}>
+              {getSourceLabel(source)}
+            </Text>
           </View>
         </View>
 
         <Text style={styles.description} numberOfLines={2}>
           {aqiStatus.description}
+        </Text>
+
+        <Text style={styles.sourceDescription} numberOfLines={1}>
+          {getSourceDescription(source)}
         </Text>
 
         <View style={styles.metricsRow}>
@@ -79,7 +114,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
     flexDirection: 'row',
     gap: 14,
   },
@@ -133,7 +167,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 8,
-    minWidth: 76,
+    minWidth: 86,
+    borderWidth: 1,
   },
   sourceLabel: {
     color: '#94a3b8',
@@ -142,7 +177,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   sourceValue: {
-    color: '#f8fafc',
     fontSize: 11,
     fontWeight: '900',
     marginTop: 1,
@@ -152,6 +186,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     marginTop: 6,
+  },
+  sourceDescription: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 4,
   },
   metricsRow: {
     flexDirection: 'row',

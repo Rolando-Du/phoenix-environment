@@ -13,16 +13,16 @@ function formatValue(value: number | null) {
 
 function getSourceLabel(source: AqiSummary['source']) {
   if (source === 'openaq') return 'OpenAQ real';
-  if (source === 'mock') return 'Mock temporal';
+  if (source === 'openmeteo') return 'Open-Meteo real';
 
   return 'Mixto';
 }
 
 function getSourceColor(source: AqiSummary['source']) {
   if (source === 'openaq') return '#22c55e';
-  if (source === 'mock') return '#eab308';
+  if (source === 'openmeteo') return '#38bdf8';
 
-  return '#38bdf8';
+  return '#a78bfa';
 }
 
 export default function AqiSummaryCard({
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderWidth: 1,
-    minWidth: 82,
+    minWidth: 92,
   },
   sourceLabel: {
     color: '#94a3b8',

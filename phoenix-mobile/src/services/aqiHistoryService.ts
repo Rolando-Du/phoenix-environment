@@ -27,14 +27,24 @@ type AqiHistoryResponse = {
   data: AqiHistoryItem[];
 };
 
+function normalizeHistorySource(source: AqiSummarySource): AqiSummarySource {
+  if (source === 'openaq' || source === 'openmeteo') {
+    return source;
+  }
+
+  return 'all';
+}
+
 export async function getAqiHistory({
   source = 'all',
   limit = 10,
 }: GetAqiHistoryParams = {}): Promise<AqiHistoryItem[]> {
+  const normalizedSource = normalizeHistorySource(source);
+
   try {
     const params = new URLSearchParams();
 
-    params.append('source', source);
+    params.append('source', normalizedSource);
     params.append('limit', String(limit));
 
     const response = await fetch(
@@ -53,7 +63,7 @@ export async function getAqiHistory({
 
     return result.data;
   } catch (error) {
-    console.warn('Usando historial AQI fallback:', error);
+    console.warn('No se pudo obtener historial AQI real:', error);
 
     return [];
   }
