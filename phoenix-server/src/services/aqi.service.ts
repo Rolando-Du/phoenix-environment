@@ -67,6 +67,8 @@ const DEFAULT_LATITUDE = -40.1579;
 const DEFAULT_LONGITUDE = -71.3534;
 const DEFAULT_HISTORY_LIMIT = 20;
 const MAX_HISTORY_LIMIT = 100;
+const DUPLICATE_WINDOW_MINUTES = 15;
+const COORDINATE_TOLERANCE = 0.0001;
 
 function normalizeHistoryLimit(limit?: number) {
   if (!limit || !Number.isFinite(limit) || limit <= 0) {
@@ -86,12 +88,68 @@ function buildSourceWhere(source: AqiHistorySource) {
   };
 }
 
-async function saveAqiReadings(points: AqiPoint[], source: AqiPersistedSource) {
+function getDuplicateDateLimit() {
+  const now = new Date();
+
+  return new Date(now.getTime() - DUPLICATE_WINDOW_MINUTES * 60 * 1000);
+}
+
+async function hasRecentSimilarReading(
+  point: AqiPoint,
+  source: AqiPersistedSource
+) {
+  const duplicateDateLimit = getDuplicateDateLimit();
+
+  const existingReading = await prisma.aqiReading.findFirst({
+    where: {
+      source,
+      title: point.title,
+      recordedAt: {
+        gte: duplicateDateLimit,
+      },
+      latitude: {
+        gte: point.coordinate.latitude - COORDINATE_TOLERANCE,
+        lte: point.coordinate.latitude + COORDINATE_TOLERANCE,
+      },
+      longitude: {
+        gte: point.coordinate.longitude - COORDINATE_TOLERANCE,
+        lte: point.coordinate.longitude + COORDINATE_TOLERANCE,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return Boolean(existingReading);
+}
+
+async function saveAqiReadingsIfNotDuplicated(
+  points: AqiPoint[],
+  source: AqiPersistedSource
+) {
   if (points.length === 0) return;
 
   try {
+    const pointsToSave: AqiPoint[] = [];
+
+    for (const point of points) {
+      const alreadyExists = await hasRecentSimilarReading(point, source);
+
+      if (!alreadyExists) {
+        pointsToSave.push(point);
+      }
+    }
+
+    if (pointsToSave.length === 0) {
+      console.log(
+        `Lecturas AQI ${source} omitidas: ya existen registros similares recientes.`
+      );
+      return;
+    }
+
     await prisma.aqiReading.createMany({
-      data: points.map((point) => ({
+      data: pointsToSave.map((point) => ({
         title: point.title,
         latitude: point.coordinate.latitude,
         longitude: point.coordinate.longitude,
@@ -120,7 +178,7 @@ export async function getNearbyAqiPoints({
     );
 
     if (openAqPoints.length > 0) {
-      await saveAqiReadings(openAqPoints, 'openaq');
+      await saveAqiReadingsIfNotDuplicated(openAqPoints, 'openaq');
 
       return {
         source: 'openaq',
@@ -128,8 +186,8 @@ export async function getNearbyAqiPoints({
       };
     }
 
-    console.warn(
-      'OpenAQ no devolvió puntos cercanos. Intentando Open-Meteo.'
+    console.log(
+      'OpenAQ sin datos cercanos. Usando Open-Meteo como fuente real por coordenadas.'
     );
   } catch (error) {
     console.error('No se pudieron obtener datos desde OpenAQ:', error);
@@ -144,7 +202,7 @@ export async function getNearbyAqiPoints({
     if (openMeteoPoint) {
       const openMeteoPoints: AqiPoint[] = [openMeteoPoint];
 
-      await saveAqiReadings(openMeteoPoints, 'openmeteo');
+      await saveAqiReadingsIfNotDuplicated(openMeteoPoints, 'openmeteo');
 
       return {
         source: 'openmeteo',
