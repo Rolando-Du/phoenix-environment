@@ -23,6 +23,8 @@ import type {
   AqiSummary,
   AqiSummarySource,
 } from "../services/aqiSummaryService";
+import { getCurrentWeather } from "../services/weatherService";
+import type { CurrentWeather } from "../services/weatherService";
 import { darkMapStyle } from "../theme/mapStyle";
 
 type ActivePanel = "aqi" | "summary" | "alerts" | "history";
@@ -60,6 +62,9 @@ export default function MapScreen() {
   const [aqiSummary, setAqiSummary] = useState<AqiSummary | null>(null);
   const [aqiHistory, setAqiHistory] = useState<AqiHistoryItem[]>([]);
   const [currentAlert, setCurrentAlert] = useState<CurrentAlert | null>(null);
+  const [currentWeather, setCurrentWeather] = useState<CurrentWeather | null>(
+    null,
+  );
 
   const [activePanel, setActivePanel] = useState<ActivePanel>("aqi");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -79,11 +84,17 @@ export default function MapScreen() {
         longitude: coordinate.longitude,
       });
 
+      const weather = await getCurrentWeather({
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+      });
+
       const persistedSource = getPersistedSource(nearbyResult.source);
 
       setAqiSource(nearbyResult.source);
       setAqiPoints(nearbyResult.points);
       setSelectedAqiPoint(nearbyResult.points[0] ?? null);
+      setCurrentWeather(weather);
 
       const summary = await getAqiSummary({
         source: persistedSource,
@@ -232,17 +243,19 @@ export default function MapScreen() {
           />
         )}
 
-        {mapMode === "explore" && exploreCoordinate?.latitude && exploreCoordinate.longitude && (
-          <Marker
-            coordinate={{
-              latitude: exploreCoordinate.latitude,
-              longitude: exploreCoordinate.longitude,
-            }}
-            title="Zona consultada"
-            description="Punto seleccionado en el mapa"
-            pinColor="#38bdf8"
-          />
-        )}
+        {mapMode === "explore" &&
+          exploreCoordinate?.latitude !== undefined &&
+          exploreCoordinate?.longitude !== undefined && (
+            <Marker
+              coordinate={{
+                latitude: exploreCoordinate.latitude,
+                longitude: exploreCoordinate.longitude,
+              }}
+              title="Zona consultada"
+              description="Punto seleccionado en el mapa"
+              pinColor="#38bdf8"
+            />
+          )}
       </MapView>
 
       <MapHeaderPanel
@@ -296,6 +309,7 @@ export default function MapScreen() {
             pm25={selectedAqiPoint.pm25}
             pm10={selectedAqiPoint.pm10}
             source={aqiSource}
+            weather={currentWeather}
           />
         )}
       </View>
@@ -333,6 +347,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 20,
     right: 20,
-    bottom: 32,
+    bottom: 40,
+    zIndex: 1000,
+    elevation: 1000,
   },
 });
