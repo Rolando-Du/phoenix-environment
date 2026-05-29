@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { AqiSource } from '../services/aqiService';
 import { getAqiStatus } from '../utils/getAqiStatus';
@@ -25,14 +26,14 @@ function getSourceLabel(source: AqiSource) {
 
 function getSourceDescription(source: AqiSource) {
   if (source === 'openaq') {
-    return 'Dato real de estación';
+    return 'Dato real de estación ambiental cercana.';
   }
 
   if (source === 'openmeteo') {
-    return 'Dato real por coordenada';
+    return 'Dato real estimado por coordenada geográfica.';
   }
 
-  return 'No disponible';
+  return 'No hay una fuente disponible para esta zona.';
 }
 
 function getSourceColor(source: AqiSource) {
@@ -47,6 +48,26 @@ function getSourceColor(source: AqiSource) {
   return '#94a3b8';
 }
 
+function getWalkingRecommendation(aqi: number) {
+  if (aqi <= 50) {
+    return 'Podés caminar normalmente. La calidad del aire es buena para actividades al aire libre.';
+  }
+
+  if (aqi <= 100) {
+    return 'Podés caminar, pero si tenés asma, alergias o sensibilidad respiratoria, evitá esfuerzos intensos o caminatas muy largas.';
+  }
+
+  if (aqi <= 150) {
+    return 'Conviene reducir la actividad física intensa. Personas sensibles deberían evitar caminatas prolongadas.';
+  }
+
+  if (aqi <= 200) {
+    return 'No es recomendable realizar caminatas largas. Evitá esfuerzo físico al aire libre si pertenecés a un grupo sensible.';
+  }
+
+  return 'Evitá salir a caminar o realizar actividad física al aire libre. La calidad del aire puede ser perjudicial.';
+}
+
 export default function AqiCard({
   title,
   value,
@@ -54,56 +75,90 @@ export default function AqiCard({
   pm10,
   source,
 }: AqiCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
   const aqiStatus = getAqiStatus(value);
   const sourceColor = getSourceColor(source);
 
   return (
     <View style={[styles.card, { borderColor: sourceColor }]}>
-      <View style={styles.leftColumn}>
-        <Text style={styles.label}>AQI ACTUAL</Text>
-        <Text style={styles.value}>{value}</Text>
-        <Text style={[styles.status, { color: aqiStatus.color }]}>
-          {aqiStatus.label}
-        </Text>
-      </View>
-
-      <View style={styles.rightColumn}>
-        <View style={styles.headerRow}>
-          <View style={styles.zoneContent}>
-            <Text style={styles.zoneLabel}>Zona seleccionada</Text>
-            <Text style={styles.zoneTitle} numberOfLines={1}>
-              {title}
-            </Text>
-          </View>
-
-          <View style={[styles.sourceBadge, { borderColor: sourceColor }]}>
-            <Text style={styles.sourceLabel}>Fuente</Text>
-            <Text style={[styles.sourceValue, { color: sourceColor }]}>
-              {getSourceLabel(source)}
-            </Text>
-          </View>
+      <View style={styles.topRow}>
+        <View style={styles.leftColumn}>
+          <Text style={styles.label}>AQI ACTUAL</Text>
+          <Text style={styles.value}>{value}</Text>
+          <Text style={[styles.status, { color: aqiStatus.color }]}>
+            {aqiStatus.label}
+          </Text>
         </View>
 
-        <Text style={styles.description} numberOfLines={2}>
-          {aqiStatus.description}
-        </Text>
+        <View style={styles.rightColumn}>
+          <View style={styles.headerRow}>
+            <View style={styles.zoneContent}>
+              <Text style={styles.zoneLabel}>Zona seleccionada</Text>
+              <Text style={styles.zoneTitle} numberOfLines={1}>
+                {title}
+              </Text>
+            </View>
 
-        <Text style={styles.sourceDescription} numberOfLines={1}>
-          {getSourceDescription(source)}
-        </Text>
-
-        <View style={styles.metricsRow}>
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>PM2.5</Text>
-            <Text style={styles.metricValue}>{pm25}</Text>
+            <View style={[styles.sourceBadge, { borderColor: sourceColor }]}>
+              <Text style={styles.sourceLabel}>Fuente</Text>
+              <Text style={[styles.sourceValue, { color: sourceColor }]}>
+                {getSourceLabel(source)}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>PM10</Text>
-            <Text style={styles.metricValue}>{pm10}</Text>
-          </View>
+          <Text
+            style={styles.description}
+            numberOfLines={expanded ? undefined : 2}
+          >
+            {aqiStatus.description}
+          </Text>
+
+          <Text style={styles.sourceDescription} numberOfLines={expanded ? 2 : 1}>
+            {getSourceDescription(source)}
+          </Text>
         </View>
       </View>
+
+      <View style={styles.metricsRow}>
+        <View style={styles.metricBox}>
+          <Text style={styles.metricLabel}>PM2.5</Text>
+          <Text style={styles.metricValue}>{pm25}</Text>
+        </View>
+
+        <View style={styles.metricBox}>
+          <Text style={styles.metricLabel}>PM10</Text>
+          <Text style={styles.metricValue}>{pm10}</Text>
+        </View>
+      </View>
+
+      {expanded && (
+        <View style={styles.detailBox}>
+          <Text style={styles.detailTitle}>Recomendación para caminar</Text>
+          <Text style={styles.detailText}>
+            {getWalkingRecommendation(value)}
+          </Text>
+
+          <View style={styles.detailDivider} />
+
+          <Text style={styles.detailTitle}>Interpretación</Text>
+          <Text style={styles.detailText}>
+            PM2.5 y PM10 son partículas en el aire. Mientras más alto sea el
+            valor, mayor puede ser el impacto en personas sensibles o durante
+            actividad física prolongada.
+          </Text>
+        </View>
+      )}
+
+      <Pressable
+        style={styles.detailButton}
+        onPress={() => setExpanded((current) => !current)}
+      >
+        <Text style={styles.detailButtonText}>
+          {expanded ? 'Ocultar detalle' : 'Ver detalle'}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -114,6 +169,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 14,
     borderWidth: 1,
+    gap: 12,
+  },
+  topRow: {
     flexDirection: 'row',
     gap: 14,
   },
@@ -196,7 +254,6 @@ const styles = StyleSheet.create({
   metricsRow: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 10,
   },
   metricBox: {
     flex: 1,
@@ -215,5 +272,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
     marginTop: 1,
+  },
+  detailBox: {
+    backgroundColor: 'rgba(30, 41, 59, 0.72)',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.18)',
+  },
+  detailTitle: {
+    color: '#f8fafc',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  detailText: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 5,
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.18)',
+    marginVertical: 10,
+  },
+  detailButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(14, 116, 144, 0.65)',
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  detailButtonText: {
+    color: '#f8fafc',
+    fontSize: 12,
+    fontWeight: '900',
   },
 });

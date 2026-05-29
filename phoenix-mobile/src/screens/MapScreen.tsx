@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import type { Region } from "react-native-maps";
+import type { MapPressEvent, Region } from "react-native-maps";
 
 import AqiCard from "../components/AqiCard";
 import AqiHistoryCard from "../components/AqiHistoryCard";
@@ -26,6 +26,12 @@ import type {
 import { darkMapStyle } from "../theme/mapStyle";
 
 type ActivePanel = "aqi" | "summary" | "alerts" | "history";
+type MapMode = "user" | "explore";
+
+type QueryCoordinate = {
+  latitude?: number;
+  longitude?: number;
+};
 
 const DEFAULT_REGION: Region = {
   latitude: -40.1579,
@@ -57,16 +63,20 @@ export default function MapScreen() {
 
   const [activePanel, setActivePanel] = useState<ActivePanel>("aqi");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mapMode, setMapMode] = useState<MapMode>("user");
+  const [exploreCoordinate, setExploreCoordinate] =
+    useState<QueryCoordinate | null>(null);
+  const [loadingAqi, setLoadingAqi] = useState(false);
 
   const { userLocation, loadingLocation, statusMessage } = useUserLocation();
 
-  useEffect(() => {
-    if (loadingLocation) return;
+  async function loadAqiData(coordinate: QueryCoordinate) {
+    setLoadingAqi(true);
 
-    async function loadAqiData() {
+    try {
       const nearbyResult = await getNearbyAqiPoints({
-        latitude: userLocation?.coords.latitude,
-        longitude: userLocation?.coords.longitude,
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
       });
 
       const persistedSource = getPersistedSource(nearbyResult.source);
@@ -90,9 +100,18 @@ export default function MapScreen() {
 
       const alert = await getCurrentAlert();
       setCurrentAlert(alert);
+    } finally {
+      setLoadingAqi(false);
     }
+  }
 
-    loadAqiData();
+  useEffect(() => {
+    if (loadingLocation) return;
+
+    loadAqiData({
+      latitude: userLocation?.coords.latitude,
+      longitude: userLocation?.coords.longitude,
+    });
   }, [loadingLocation, userLocation]);
 
   useEffect(() => {
@@ -129,6 +148,58 @@ export default function MapScreen() {
     setMenuOpen(false);
   }
 
+  function handleMapPress(event: MapPressEvent) {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+
+    setMapMode("explore");
+    setExploreCoordinate({ latitude, longitude });
+    setActivePanel("aqi");
+    setMenuOpen(false);
+
+    loadAqiData({
+      latitude,
+      longitude,
+    });
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude,
+        longitude,
+        latitudeDelta: 0.04,
+        longitudeDelta: 0.04,
+      },
+      700,
+    );
+  }
+
+  function handleBackToUserLocation() {
+    if (!userLocation) return;
+
+    setMapMode("user");
+    setExploreCoordinate(null);
+    setActivePanel("aqi");
+    setMenuOpen(false);
+
+    const userRegion: Region = {
+      latitude: userLocation.coords.latitude,
+      longitude: userLocation.coords.longitude,
+      latitudeDelta: 0.04,
+      longitudeDelta: 0.04,
+    };
+
+    mapRef.current?.animateToRegion(userRegion, 700);
+
+    loadAqiData({
+      latitude: userLocation.coords.latitude,
+      longitude: userLocation.coords.longitude,
+    });
+  }
+
+  const headerStatusMessage =
+    mapMode === "explore"
+      ? "Zona consultada en el mapa. Tocá otro punto para explorar."
+      : `${statusMessage} Tocá el mapa para consultar otra zona.`;
+
   return (
     <View style={styles.container}>
       <MapView
@@ -138,6 +209,7 @@ export default function MapScreen() {
         customMapStyle={darkMapStyle}
         showsUserLocation={!!userLocation}
         showsMyLocationButton
+        onPress={handleMapPress}
       >
         {aqiPoints.map((point) => (
           <AqiMapMarker
@@ -159,11 +231,23 @@ export default function MapScreen() {
             description="Ubicación detectada por Phoenix"
           />
         )}
+
+        {mapMode === "explore" && exploreCoordinate?.latitude && exploreCoordinate.longitude && (
+          <Marker
+            coordinate={{
+              latitude: exploreCoordinate.latitude,
+              longitude: exploreCoordinate.longitude,
+            }}
+            title="Zona consultada"
+            description="Punto seleccionado en el mapa"
+            pinColor="#38bdf8"
+          />
+        )}
       </MapView>
 
       <MapHeaderPanel
-        loading={loadingLocation}
-        statusMessage={statusMessage}
+        loading={loadingLocation || loadingAqi}
+        statusMessage={headerStatusMessage}
       />
 
       <MapOptionsMenu
@@ -172,6 +256,15 @@ export default function MapScreen() {
         onToggle={() => setMenuOpen((current) => !current)}
         onSelect={handleSelectPanel}
       />
+
+      {mapMode === "explore" && userLocation && (
+        <Pressable
+          style={styles.locationButton}
+          onPress={handleBackToUserLocation}
+        >
+          <Text style={styles.locationButtonText}>Mi ubicación</Text>
+        </Pressable>
+      )}
 
       <View style={styles.bottomPanel}>
         {activePanel === "summary" && aqiSummary && (
@@ -217,6 +310,24 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  locationButton: {
+    position: "absolute",
+    top: 94,
+    right: 20,
+    zIndex: 40,
+    elevation: 40,
+    backgroundColor: "rgba(15, 23, 42, 0.96)",
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.45)",
+  },
+  locationButtonText: {
+    color: "#f8fafc",
+    fontSize: 12,
+    fontWeight: "900",
   },
   bottomPanel: {
     position: "absolute",
