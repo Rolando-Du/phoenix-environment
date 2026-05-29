@@ -1,16 +1,29 @@
+
 # Phoenix Mobile
 
-Aplicación mobile de Phoenix Environment para visualizar calidad del aire en tiempo real desde el celular.
+Aplicación mobile de Phoenix Environment para visualizar calidad del aire y clima actual en tiempo real desde el celular.
 
-La app consume datos desde Phoenix API y permite ver:
+La app consume datos desde Phoenix API y permite consultar información ambiental tanto desde la ubicación real del usuario como desde cualquier punto seleccionado en el mapa.
+
+Phoenix Mobile está pensada para personas que caminan, hacen trekking, realizan actividades al aire libre o desean consultar las condiciones ambientales de una zona antes de ir.
+
+---
+
+## Qué permite consultar
 
 * AQI actual por ubicación.
+* AQI de cualquier punto tocado en el mapa.
 * Fuente de datos real.
-* Mapa ambiental.
+* Mapa ambiental interactivo.
+* Temperatura actual.
+* Sensación térmica.
+* Humedad.
+* Viento.
+* Estado del clima.
+* Recomendación para caminar o realizar actividad al aire libre.
 * Resumen AQI.
 * Historial AQI.
 * Alertas ambientales.
-* Modo demo Buenos Aires para probar OpenAQ.
 
 ---
 
@@ -61,7 +74,7 @@ El celular necesita acceder a la IP local de la PC.
 Cuando el backend esté desplegado en internet, reemplazar por la URL pública:
 
 ```ts
-export const API_BASE_URL = 'https://phoenix-api.onrender.com';
+export const API_BASE_URL = 'https://phoenix-api-2zpd.onrender.com';
 ```
 
 ---
@@ -82,17 +95,80 @@ Luego abrir Expo Go y escanear el QR.
 
 Muestra la ubicación actual del usuario y los puntos AQI cercanos.
 
-### AQI actual
+También permite tocar cualquier punto del mapa para consultar la calidad del aire y el clima de esa zona, aunque el usuario no esté físicamente ahí.
 
-Muestra:
+Esto permite responder preguntas como:
+
+```txt
+¿Cómo está el aire donde estoy?
+¿Cómo está el aire donde quiero ir?
+¿Conviene caminar en esa zona?
+¿Qué temperatura hay en ese lugar?
+¿Hay viento o humedad alta?
+```
+
+---
+
+### Consulta por ubicación real
+
+Al abrir la app, Phoenix obtiene la ubicación real del usuario mediante GPS y consulta Phoenix API usando esas coordenadas.
+
+La app muestra:
+
+* AQI actual.
+* PM2.5.
+* PM10.
+* Fuente AQI.
+* Temperatura, si está disponible.
+* Recomendación ambiental.
+
+---
+
+### Consulta tocando el mapa
+
+El usuario puede tocar cualquier punto del mapa.
+
+La app toma la latitud y longitud del punto seleccionado y consulta:
+
+```txt
+/api/aqi/nearby?lat=...&lng=...
+/api/weather/current?lat=...&lng=...
+```
+
+Luego actualiza:
+
+* Marcador de zona consultada.
+* Tarjeta AQI.
+* Clima actual.
+* Recomendación para caminar.
+* Botón para volver a la ubicación real.
+
+---
+
+### Volver a mi ubicación
+
+Cuando el usuario consulta una zona tocando el mapa, aparece el botón:
+
+```txt
+Mi ubicación
+```
+
+Al tocarlo, la app vuelve a consultar usando el GPS real del celular.
+
+---
+
+## AQI actual
+
+La tarjeta principal muestra:
 
 * Valor AQI.
 * Estado ambiental.
 * PM2.5.
 * PM10.
+* Temperatura actual, si está disponible.
 * Fuente de datos.
 
-Fuentes posibles:
+Fuentes posibles de calidad del aire:
 
 ```txt
 OpenAQ
@@ -102,23 +178,88 @@ Sin datos
 
 ---
 
-## Fuentes de datos
+## Detalle expandible
 
-La app no consulta directamente OpenAQ ni Open-Meteo.
+La tarjeta AQI tiene una opción:
+
+```txt
+Ver detalle
+```
+
+Al tocarla, la card se expande y muestra más información.
+
+Incluye:
+
+* Descripción completa del estado del aire.
+* Clima actual.
+* Temperatura.
+* Sensación térmica.
+* Humedad.
+* Viento.
+* Recomendación para caminar.
+* Interpretación de PM2.5 y PM10.
+
+La tarjeta expandida tiene scroll interno y un alto máximo para no tapar toda la pantalla.
+
+---
+
+## Clima actual
+
+La app no consulta directamente servicios climáticos externos.
 
 La app consulta Phoenix API, y el backend decide la fuente:
 
 ```txt
+1. Open-Meteo Weather
+2. OpenWeather
+3. Clima temporalmente no disponible
+```
+
+Si el clima está disponible, la app muestra:
+
+* Temperatura.
+* Sensación térmica.
+* Humedad.
+* Viento.
+* Estado del clima.
+
+Si el clima no está disponible temporalmente, la app muestra un mensaje claro sin romper la experiencia:
+
+```txt
+Clima temporalmente no disponible.
+El AQI sigue funcionando correctamente para evaluar la calidad del aire.
+```
+
+---
+
+## Fuentes de datos
+
+La app no consulta directamente OpenAQ, Open-Meteo ni OpenWeather.
+
+La app consume Phoenix API, y el backend decide la fuente correspondiente.
+
+### Calidad del aire
+
+```txt
 1. OpenAQ
-2. Open-Meteo
+2. Open-Meteo Air Quality
 3. Sin datos disponibles
+```
+
+### Clima actual
+
+```txt
+1. Open-Meteo Weather
+2. OpenWeather
+3. Clima temporalmente no disponible
 ```
 
 Ejemplos:
 
 ```txt
-Junín de los Andes → Open-Meteo
-Buenos Aires demo → OpenAQ
+Junín de los Andes / Patagonia → Open-Meteo Air Quality
+Zonas con estaciones ambientales → OpenAQ
+Clima actual → Open-Meteo Weather u OpenWeather
 ```
 
 ---
@@ -132,52 +273,11 @@ AQI actual
 Resumen
 Alertas
 Historial
-Probar Buenos Aires
-Volver a mi ubicación
 ```
 
----
+El modo demo de Buenos Aires fue eliminado.
 
-## Modo demo Buenos Aires
-
-Permite probar OpenAQ sin estar físicamente en Buenos Aires.
-
-Al tocar:
-
-```txt
-Probar Buenos Aires
-```
-
-la app consulta:
-
-```txt
-lat=-34.6037
-lng=-58.3816
-```
-
-Resultado esperado:
-
-```txt
-Fuente: OpenAQ
-```
-
----
-
-## Volver a mi ubicación
-
-Al tocar:
-
-```txt
-Volver a mi ubicación
-```
-
-la app vuelve a usar el GPS real del celular.
-
-En Junín de los Andes, el resultado esperado es:
-
-```txt
-Fuente: Open-Meteo
-```
+Ahora la app permite consultar cualquier zona tocando directamente el mapa.
 
 ---
 
@@ -205,11 +305,11 @@ Incluye:
 
 Muestra las últimas lecturas registradas según la fuente actual.
 
-Ejemplo:
+Ejemplos:
 
 ```txt
-Junín → historial Open-Meteo
-Buenos Aires demo → historial OpenAQ
+Zona con OpenAQ → historial OpenAQ
+Zona sin estación cercana → historial Open-Meteo
 ```
 
 ---
@@ -256,7 +356,8 @@ phoenix-mobile/
     │   ├── alertService.ts
     │   ├── aqiHistoryService.ts
     │   ├── aqiService.ts
-    │   └── aqiSummaryService.ts
+    │   ├── aqiSummaryService.ts
+    │   └── weatherService.ts
     │
     ├── theme/
     │   └── mapStyle.ts
@@ -267,19 +368,70 @@ phoenix-mobile/
 
 ---
 
+## Servicios mobile
+
+### aqiService.ts
+
+Consulta puntos AQI cercanos a coordenadas determinadas.
+
+### aqiSummaryService.ts
+
+Obtiene resumen ambiental.
+
+### aqiHistoryService.ts
+
+Obtiene historial AQI.
+
+### alertService.ts
+
+Obtiene alerta ambiental actual.
+
+### weatherService.ts
+
+Obtiene clima actual desde Phoenix API.
+
+Devuelve:
+
+* Temperatura.
+* Sensación térmica.
+* Humedad.
+* Viento.
+* Estado del clima.
+* Fuente.
+* Disponibilidad.
+
+---
+
 ## Estado actual
 
 La app ya permite:
 
 * Detectar ubicación real.
 * Consultar AQI real.
+* Consultar cualquier punto tocando el mapa.
 * Usar Open-Meteo para zonas sin estación OpenAQ.
 * Usar OpenAQ cuando hay estaciones cercanas.
+* Mostrar temperatura actual cuando el backend tiene datos climáticos disponibles.
+* Mostrar sensación térmica.
+* Mostrar humedad.
+* Mostrar viento.
+* Mostrar estado del clima.
+* Mostrar card expandible con scroll interno.
+* Mostrar recomendación para caminar.
+* Volver a ubicación real del usuario.
 * Mostrar resumen ambiental.
 * Mostrar historial.
 * Mostrar alertas.
-* Probar Buenos Aires desde menú demo.
-* Volver a ubicación real del usuario.
+
+---
+
+## Consideraciones
+
+Render Free puede dormir por inactividad. La primera consulta puede tardar algunos segundos mientras el backend despierta.
+
+Open-Meteo puede limitar solicitudes temporalmente. En ese caso, Phoenix API intenta usar OpenWeather como fallback climático.
+
+Si ambas fuentes climáticas fallan, la app sigue funcionando con AQI y muestra clima temporalmente no disponible.
 
 ---
 
