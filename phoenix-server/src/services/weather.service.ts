@@ -6,6 +6,7 @@ export type CurrentWeather = {
   weatherCode: number | null;
   weatherLabel: string;
   source: 'openmeteo';
+  available: boolean;
   cached: boolean;
   generatedAt: Date;
   coordinate: {
@@ -35,6 +36,8 @@ type WeatherCacheEntry = {
 const OPEN_METEO_WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 
 const WEATHER_CACHE_TTL_MINUTES = 15;
+const WEATHER_UNAVAILABLE_CACHE_TTL_MINUTES = 5;
+
 const weatherCache = new Map<string, WeatherCacheEntry>();
 
 function buildOpenMeteoWeatherUrl(latitude: number, longitude: number) {
@@ -119,16 +122,41 @@ function getCachedWeather(latitude: number, longitude: number) {
   };
 }
 
-function saveWeatherToCache(weather: CurrentWeather) {
+function saveWeatherToCache(
+  weather: CurrentWeather,
+  ttlMinutes = WEATHER_CACHE_TTL_MINUTES
+) {
   const cacheKey = buildCacheKey(
     weather.coordinate.latitude,
     weather.coordinate.longitude
   );
 
   weatherCache.set(cacheKey, {
-    expiresAt: Date.now() + WEATHER_CACHE_TTL_MINUTES * 60 * 1000,
+    expiresAt: Date.now() + ttlMinutes * 60 * 1000,
     data: weather,
   });
+}
+
+function buildUnavailableWeather(
+  latitude: number,
+  longitude: number
+): CurrentWeather {
+  return {
+    temperature: null,
+    apparentTemperature: null,
+    humidity: null,
+    windSpeed: null,
+    weatherCode: null,
+    weatherLabel: 'Clima temporalmente no disponible',
+    source: 'openmeteo',
+    available: false,
+    cached: false,
+    generatedAt: new Date(),
+    coordinate: {
+      latitude,
+      longitude,
+    },
+  };
 }
 
 export async function getCurrentWeather(
@@ -149,13 +177,18 @@ export async function getCurrentWeather(
   });
 
   if (!response.ok) {
-    const fallbackCachedWeather = getCachedWeather(latitude, longitude);
+    console.warn(
+      `Open-Meteo Weather no disponible temporalmente. Status: ${response.status}`
+    );
 
-    if (fallbackCachedWeather) {
-      return fallbackCachedWeather;
-    }
+    const unavailableWeather = buildUnavailableWeather(latitude, longitude);
 
-    throw new Error(`Open-Meteo Weather respondió con status ${response.status}`);
+    saveWeatherToCache(
+      unavailableWeather,
+      WEATHER_UNAVAILABLE_CACHE_TTL_MINUTES
+    );
+
+    return unavailableWeather;
   }
 
   const result = (await response.json()) as OpenMeteoWeatherResponse;
@@ -190,6 +223,7 @@ export async function getCurrentWeather(
     weatherCode,
     weatherLabel: getWeatherLabel(weatherCode),
     source: 'openmeteo',
+    available: true,
     cached: false,
     generatedAt: new Date(),
     coordinate: {
