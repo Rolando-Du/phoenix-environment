@@ -1,7 +1,7 @@
 {
-  "name": "phoenix-server",
+  "name": "clearzone-server",
   "version": "1.0.0",
-  "description": "Backend de Phoenix Environment para monitoreo ambiental de calidad del aire.",
+  "description": "Backend de CLEARZONE para monitoreo ambiental de calidad del aire y clima actual.",
   "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -11,12 +11,14 @@
     "postinstall": "prisma generate"
   },
   "keywords": [
-    "phoenix",
+    "clearzone",
     "environment",
     "air-quality",
+    "weather",
     "aqi",
     "openaq",
-    "openmeteo"
+    "openmeteo",
+    "openweather"
   ],
   "author": "Rolando Du / Yani Leiba",
   "license": "ISC",
