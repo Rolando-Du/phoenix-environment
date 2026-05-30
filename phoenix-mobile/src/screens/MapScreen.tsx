@@ -8,7 +8,6 @@ import AqiHistoryCard from "../components/AqiHistoryCard";
 import AqiMapMarker from "../components/AqiMapMarker";
 import AqiSummaryCard from "../components/AqiSummaryCard";
 import CurrentAlertCard from "../components/CurrentAlertCard";
-import MapHeaderPanel from "../components/MapHeaderPanel";
 import MapOptionsMenu from "../components/MapOptionsMenu";
 import type { AqiPoint } from "../data/aqiPoints";
 import { useUserLocation } from "../hooks/useUserLocation";
@@ -73,7 +72,7 @@ export default function MapScreen() {
     useState<QueryCoordinate | null>(null);
   const [loadingAqi, setLoadingAqi] = useState(false);
 
-  const { userLocation, loadingLocation, statusMessage } = useUserLocation();
+  const { userLocation, loadingLocation } = useUserLocation();
 
   async function loadAqiData(coordinate: QueryCoordinate) {
     setLoadingAqi(true);
@@ -206,11 +205,6 @@ export default function MapScreen() {
     });
   }
 
-  const headerStatusMessage =
-    mapMode === "explore"
-      ? "Zona consultada en el mapa. Tocá otro punto para explorar."
-      : `${statusMessage} Tocá el mapa para consultar otra zona.`;
-
   return (
     <View style={styles.container}>
       <MapView
@@ -239,7 +233,7 @@ export default function MapScreen() {
               longitude: userLocation.coords.longitude,
             }}
             title="Tu ubicación"
-            description="Ubicación detectada por Phoenix"
+            description="Tu posición actual"
           />
         )}
 
@@ -257,11 +251,6 @@ export default function MapScreen() {
             />
           )}
       </MapView>
-
-      <MapHeaderPanel
-        loading={loadingLocation || loadingAqi}
-        statusMessage={headerStatusMessage}
-      />
 
       <MapOptionsMenu
         open={menuOpen}

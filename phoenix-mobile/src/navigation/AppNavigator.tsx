@@ -1,5 +1,6 @@
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
@@ -11,6 +12,8 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const clearZoneLogo = require('../../assets/logo-CZ.png');
 
 const MyTheme = {
   ...DarkTheme,
@@ -24,6 +27,23 @@ const MyTheme = {
   },
 };
 
+function ClearZoneTitle() {
+  return (
+    <View style={styles.titleContainer}>
+      <Image source={clearZoneLogo} style={styles.logo} resizeMode="contain" />
+
+      <View style={styles.textRow}>
+        <Text style={[styles.titleText, { color: COLORS.secondary }]}>
+          CLEAR
+        </Text>
+        <Text style={[styles.titleText, { color: COLORS.success }]}>
+          ZONE
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export default function AppNavigator() {
   return (
     <NavigationContainer theme={MyTheme}>
@@ -34,6 +54,7 @@ export default function AppNavigator() {
             backgroundColor: COLORS.surface,
           },
           headerTintColor: COLORS.textPrimary,
+          headerTitleAlign: 'center',
           contentStyle: {
             backgroundColor: COLORS.background,
           },
@@ -43,7 +64,7 @@ export default function AppNavigator() {
           name="Home"
           component={HomeScreen}
           options={{
-            title: 'Phoenix',
+            headerTitle: () => <ClearZoneTitle />,
           }}
         />
 
@@ -51,10 +72,31 @@ export default function AppNavigator() {
           name="Map"
           component={MapScreen}
           options={{
-            title: 'Mapa ambiental',
+            headerTitle: () => <ClearZoneTitle />,
           }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 18,
+  },
+  textRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+});

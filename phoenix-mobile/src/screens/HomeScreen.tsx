@@ -1,17 +1,24 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { COLORS } from '../theme/colors';
 import { TYPOGRAPHY } from '../theme/typography';
 import { SPACING } from '../theme/spacing';
 
+const clearZoneLogo = require('../../assets/logo-CZ.png');
+
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Phoenix</Text>
+        <Image source={clearZoneLogo} style={styles.logo} resizeMode="contain" />
+
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: COLORS.secondary }]}>CLEAR</Text>
+          <Text style={[styles.title, { color: COLORS.success }]}>ZONE</Text>
+        </View>
 
         <Text style={styles.subtitle}>
-          Monitoreo ambiental inteligente
+          Aire y clima en tiempo real para moverte mejor.
         </Text>
       </View>
     </View>
@@ -31,16 +38,29 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
 
+  logo: {
+    width: 96,
+    height: 96,
+    marginBottom: SPACING.md,
+    borderRadius: 24,
+  },
+
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+
   title: {
     fontSize: TYPOGRAPHY.title,
-    color: COLORS.fire,
-    fontWeight: '700',
-    marginBottom: SPACING.md,
+    fontWeight: '900',
   },
 
   subtitle: {
     fontSize: TYPOGRAPHY.body,
     color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 280,
   },
 });
