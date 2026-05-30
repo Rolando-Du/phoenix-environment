@@ -20,7 +20,7 @@
     "openmeteo",
     "openweather"
   ],
-  "author": "Rolando Du / Yani Leiba",
+  "author": "Rolando Duarte",
   "license": "ISC",
   "devEngines": {
     "packageManager": {
