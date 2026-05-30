@@ -1,9 +1,11 @@
 
-# Phoenix API
+# CLEARZONE API
 
-Backend de Phoenix Environment para monitoreo ambiental de calidad del aire y clima actual.
+Backend de CLEARZONE para monitoreo ambiental de calidad del aire y clima actual.
 
 La API consulta datos reales desde distintas fuentes externas para entregar información ambiental por coordenadas.
+
+CLEARZONE permite consultar AQI, partículas PM2.5/PM10, clima actual, temperatura, sensación térmica, humedad, viento, historial, resumen y alertas ambientales.
 
 ---
 
@@ -124,7 +126,7 @@ http://localhost:4000
 GET /
 ```
 
-Devuelve información general de Phoenix API.
+Devuelve información general de CLEARZONE API.
 
 ```http
 GET /health
@@ -302,7 +304,7 @@ Devuelve la alerta ambiental actual usando lecturas reales recientes.
 
 ## Flujo de fuentes AQI
 
-Phoenix consulta las fuentes de calidad del aire en este orden:
+CLEARZONE consulta las fuentes de calidad del aire en este orden:
 
 ```txt
 1. OpenAQ
@@ -318,7 +320,7 @@ Open-Meteo Air Quality se usa cuando no hay estaciones cercanas, consultando dat
 
 ## Flujo de fuentes climáticas
 
-Phoenix consulta clima actual en este orden:
+CLEARZONE consulta clima actual en este orden:
 
 ```txt
 1. Open-Meteo Weather
@@ -326,11 +328,11 @@ Phoenix consulta clima actual en este orden:
 3. Clima temporalmente no disponible
 ```
 
-Si Open-Meteo responde correctamente, Phoenix usa esa fuente.
+Si Open-Meteo responde correctamente, CLEARZONE usa esa fuente.
 
-Si Open-Meteo devuelve error o limita solicitudes, Phoenix intenta obtener clima desde OpenWeather.
+Si Open-Meteo devuelve error o limita solicitudes, CLEARZONE intenta obtener clima desde OpenWeather.
 
-Si ambas fuentes fallan, Phoenix devuelve una respuesta controlada con `available: false`, sin romper la API ni el mobile.
+Si ambas fuentes fallan, CLEARZONE devuelve una respuesta controlada con `available: false`, sin romper la API ni el mobile.
 
 ---
 
@@ -351,7 +353,7 @@ Actualmente el clima no se persiste en Neon.
 
 ## Persistencia AQI
 
-Phoenix guarda en Neon solo datos reales de calidad del aire:
+CLEARZONE guarda en Neon solo datos reales de calidad del aire:
 
 ```txt
 openaq
