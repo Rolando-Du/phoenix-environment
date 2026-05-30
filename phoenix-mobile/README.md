@@ -1,11 +1,11 @@
 
-# Phoenix Mobile
+# CLEARZONE Mobile
 
-Aplicación mobile de Phoenix Environment para visualizar calidad del aire y clima actual en tiempo real desde el celular.
+Aplicación mobile para consultar calidad del aire y clima actual en tiempo real desde el celular.
 
-La app consume datos desde Phoenix API y permite consultar información ambiental tanto desde la ubicación real del usuario como desde cualquier punto seleccionado en el mapa.
+CLEARZONE permite visualizar información ambiental tanto desde la ubicación real del usuario como desde cualquier punto seleccionado en el mapa.
 
-Phoenix Mobile está pensada para personas que caminan, hacen trekking, realizan actividades al aire libre o desean consultar las condiciones ambientales de una zona antes de ir.
+La app está pensada para personas que caminan, hacen trekking, realizan actividades al aire libre o desean consultar las condiciones ambientales de una zona antes de ir.
 
 ---
 
@@ -91,7 +91,7 @@ Luego abrir Expo Go y escanear el QR.
 
 ## Funcionalidades principales
 
-### Mapa ambiental
+### Mapa ambiental interactivo
 
 Muestra la ubicación actual del usuario y los puntos AQI cercanos.
 
@@ -111,7 +111,7 @@ Esto permite responder preguntas como:
 
 ### Consulta por ubicación real
 
-Al abrir la app, Phoenix obtiene la ubicación real del usuario mediante GPS y consulta Phoenix API usando esas coordenadas.
+Al abrir la app, CLEARZONE obtiene la ubicación real del usuario mediante GPS y consulta el backend usando esas coordenadas.
 
 La app muestra:
 
@@ -207,7 +207,7 @@ La tarjeta expandida tiene scroll interno y un alto máximo para no tapar toda l
 
 La app no consulta directamente servicios climáticos externos.
 
-La app consulta Phoenix API, y el backend decide la fuente:
+La app consulta el backend, y el backend decide la fuente:
 
 ```txt
 1. Open-Meteo Weather
@@ -236,7 +236,7 @@ El AQI sigue funcionando correctamente para evaluar la calidad del aire.
 
 La app no consulta directamente OpenAQ, Open-Meteo ni OpenWeather.
 
-La app consume Phoenix API, y el backend decide la fuente correspondiente.
+La app consume el backend del proyecto, y el backend decide la fuente correspondiente.
 
 ### Calidad del aire
 
@@ -329,18 +329,43 @@ critical
 
 ---
 
+## Identidad visual
+
+La app utiliza el nombre:
+
+```txt
+CLEARZONE
+```
+
+El título superior muestra:
+
+```txt
+CLEAR = celeste
+ZONE = verde
+```
+
+También incluye un logo propio ubicado en:
+
+```txt
+src/assets/logo-CZ.png
+```
+
+---
+
 ## Estructura principal
 
 ```txt
 phoenix-mobile/
 └── src/
+    ├── assets/
+    │   └── logo-CZ.png
+    │
     ├── components/
     │   ├── AqiCard.tsx
     │   ├── AqiHistoryCard.tsx
     │   ├── AqiMapMarker.tsx
     │   ├── AqiSummaryCard.tsx
     │   ├── CurrentAlertCard.tsx
-    │   ├── MapHeaderPanel.tsx
     │   └── MapOptionsMenu.tsx
     │
     ├── config/
@@ -349,7 +374,11 @@ phoenix-mobile/
     ├── hooks/
     │   └── useUserLocation.ts
     │
+    ├── navigation/
+    │   └── AppNavigator.tsx
+    │
     ├── screens/
+    │   ├── HomeScreen.tsx
     │   └── MapScreen.tsx
     │
     ├── services/
@@ -388,7 +417,7 @@ Obtiene alerta ambiental actual.
 
 ### weatherService.ts
 
-Obtiene clima actual desde Phoenix API.
+Obtiene clima actual desde el backend.
 
 Devuelve:
 
@@ -422,6 +451,7 @@ La app ya permite:
 * Mostrar resumen ambiental.
 * Mostrar historial.
 * Mostrar alertas.
+* Mostrar logo propio junto al título CLEARZONE.
 
 ---
 
@@ -429,7 +459,7 @@ La app ya permite:
 
 Render Free puede dormir por inactividad. La primera consulta puede tardar algunos segundos mientras el backend despierta.
 
-Open-Meteo puede limitar solicitudes temporalmente. En ese caso, Phoenix API intenta usar OpenWeather como fallback climático.
+Open-Meteo puede limitar solicitudes temporalmente. En ese caso, el backend intenta usar OpenWeather como fallback climático.
 
 Si ambas fuentes climáticas fallan, la app sigue funcionando con AQI y muestra clima temporalmente no disponible.
 
