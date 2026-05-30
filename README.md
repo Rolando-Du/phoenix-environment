@@ -1,17 +1,17 @@
 
-# Phoenix Environment
+# CLEARZONE Environment
 
-Phoenix Environment es una aplicación mobile + backend para monitoreo ambiental en tiempo real.
+CLEARZONE Environment es una aplicación mobile + backend para monitoreo ambiental en tiempo real.
 
 El sistema permite consultar la calidad del aire y condiciones climáticas actuales tanto desde la ubicación real del usuario como desde cualquier punto seleccionado en el mapa.
 
-Phoenix está pensado para ayudar a personas que realizan caminatas, trekking, actividades al aire libre o desplazamientos urbanos a tomar mejores decisiones según el estado ambiental de una zona.
+CLEARZONE está pensado para ayudar a personas que realizan caminatas, trekking, actividades al aire libre o desplazamientos urbanos a tomar mejores decisiones según el estado ambiental de una zona.
 
 ---
 
 ## Fuentes de datos
 
-Phoenix obtiene datos reales desde distintas fuentes externas.
+CLEARZONE obtiene datos reales desde distintas fuentes externas.
 
 ### Calidad del aire
 
@@ -66,10 +66,13 @@ Phoenix/
 │   └── .env.example
 │
 └── phoenix-mobile/
+    ├── assets/
+    │   └── logo-CZ.png
     ├── src/
     │   ├── components/
     │   ├── config/
     │   ├── hooks/
+    │   ├── navigation/
     │   ├── screens/
     │   ├── services/
     │   ├── theme/
@@ -209,7 +212,7 @@ Respuesta esperada:
 }
 ```
 
-Si Open-Meteo Weather no está disponible y OpenWeather tampoco responde, Phoenix devuelve una respuesta controlada:
+Si Open-Meteo Weather no está disponible y OpenWeather tampoco responde, CLEARZONE devuelve una respuesta controlada:
 
 ```json
 {
@@ -269,7 +272,7 @@ export const API_BASE_URL = 'https://phoenix-api-2zpd.onrender.com';
 
 ## Flujo de datos AQI
 
-Phoenix trabaja con este orden:
+CLEARZONE trabaja con este orden:
 
 ```txt
 1. Consulta OpenAQ.
@@ -284,7 +287,7 @@ Phoenix trabaja con este orden:
 
 ## Flujo de datos climáticos
 
-Phoenix consulta clima actual usando este orden:
+CLEARZONE consulta clima actual usando este orden:
 
 ```txt
 1. Consulta Open-Meteo Weather.
@@ -317,6 +320,8 @@ El clima no se persiste en la base de datos actualmente. Se consulta en tiempo r
 * Resumen ambiental.
 * Historial AQI.
 * Alertas ambientales recientes.
+* Logo propio de CLEARZONE.
+* Header mobile con identidad CLEARZONE.
 * Persistencia de lecturas AQI en Neon.
 * Protección contra duplicados recientes.
 * Endpoint raíz documentado.
@@ -326,7 +331,7 @@ El clima no se persiste en la base de datos actualmente. Se consulta en tiempo r
 
 ## Uso principal
 
-Phoenix permite responder preguntas como:
+CLEARZONE permite responder preguntas como:
 
 ```txt
 ¿Cómo está el aire donde estoy?
@@ -336,13 +341,13 @@ Phoenix permite responder preguntas como:
 ¿Hay viento o humedad alta?
 ```
 
-El usuario puede tocar cualquier punto del mapa y Phoenix consulta AQI + clima actual para esa coordenada.
+El usuario puede tocar cualquier punto del mapa y CLEARZONE consulta AQI + clima actual para esa coordenada.
 
 ---
 
 ## Estado actual del proyecto
 
-Phoenix ya funciona con datos reales:
+CLEARZONE ya funciona con datos reales:
 
 ```txt
 Junín de los Andes / Patagonia → Open-Meteo Air Quality y Open-Meteo Weather
